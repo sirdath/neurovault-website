@@ -32,6 +32,7 @@
       items: [
         { slug: "graph-view", title: "The graph view" },
         { slug: "drop-folder", title: "Drop-folder ingest" },
+        { slug: "diagnostic", title: "Brain diagnostic" },
       ],
     },
     {
