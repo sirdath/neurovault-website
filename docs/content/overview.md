@@ -46,7 +46,7 @@ Three processes: the desktop app, the MCP proxy, and the agent. The desktop app 
 
 - `~/.neurovault/brains/<brain_id>/brain.db` — one SQLite file per brain: engrams, chunks, `vec_chunks` (sqlite-vec), entities, links, BM25 indexes.
 - `~/.neurovault/brains/<brain_id>/vault/` — the markdown source of truth. Every engram is also a `.md` file you can read or edit outside the app.
-- `~/.neurovault/brains/<brain_id>/_inbox/` — the [drop-folder](#drop-folder): raw files you've dropped in, waiting for the agent to turn them into notes.
+- `~/.neurovault/brains/<brain_id>/raw/` — the [drop-folder](#drop-folder): raw files you've pasted in (with a `README.md` guide), waiting for the agent to turn them into notes.
 - `~/.cache/fastembed/` — ONNX model cache for the BGE embedder + reranker. Downloaded once on first run.
 
 > [!NOTE]

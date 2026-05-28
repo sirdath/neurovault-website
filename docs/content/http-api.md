@@ -304,7 +304,7 @@ For after an embedding-model upgrade. Pass `dry_run: true` first to size the wor
 
 #### `GET /api/inbox` — list pending dropped files
 
-Returns `[{ name, size, ext, path }]` for files waiting in the active brain's `_inbox/`. Optional `?brain=<id>`.
+Returns `[{ name, size, ext, path }]` for files waiting in the active brain's `raw/` folder. Optional `?brain=<id>`.
 
 #### `GET /api/inbox/file?name=<name>` — read one inbox file
 
@@ -312,7 +312,7 @@ Returns `{ name, path, size, text, is_binary, truncated }`. `text` is inlined fo
 
 #### `POST /api/inbox/done` — mark a file processed
 
-Body `{ "name": "<name>", "brain": "<id>" }`. Moves the raw file into `_inbox/_done/`. Idempotent.
+Body `{ "name": "<name>", "brain": "<id>" }`. Moves the raw file into `raw/_done/`. Idempotent.
 
 ---
 
