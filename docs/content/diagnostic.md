@@ -46,9 +46,19 @@ The agent has a read-only **`diagnose_brain`** tool that returns the same `{grad
 2. **Orphans / islands** → find the notes and add `[[wikilinks]]` between related ones, or merge near-duplicates.
 3. **Unfiled** → rename notes into folders (e.g. `research/embeddings.md`).
 4. **Dormant** → revisit the still-relevant ones; let the rest decay.
-5. `diagnose_brain()` again — confirm the grade improved.
+5. **Potential contradictions** → `find_conflicts()` lists note pairs that are the same topic with a likely different claim; read both, then `supersede_note(old, new)` the stale one so recall serves the current truth.
+6. `diagnose_brain()` again — confirm the grade improved.
 
-`diagnose_brain` never changes the vault itself; the agent makes the edits with the normal write tools (`remember`, save, rename). This is the maintenance work memory wants an agent to own — write-time curation, not just retrieval.
+`diagnose_brain` never changes the vault itself; the agent makes the edits with the normal write tools (`remember`, save, rename, `supersede_note`). This is the maintenance work memory wants an agent to own — write-time curation, not just retrieval.
+
+### Keeping the brain current (contradiction resolution)
+
+New information should beat stale information. Two mechanisms keep the brain from accumulating contradictions:
+
+- **At write time:** `remember` returns `potential_conflicts` when the new note sits in the mid-similarity band (~0.82–0.92) of an existing one — same topic, likely a different claim. The agent can then write the new note and retire the old in one call: `remember(content=..., supersedes=[old_id])`.
+- **On demand:** `find_conflicts()` sweeps the whole brain for such pairs; the Diagnostic also surfaces a **"potential contradictions"** count.
+
+Resolving a conflict calls **`supersede_note(old_id, new_id)`** — the old note is hidden from recall but **kept on disk** (reversible metadata, not a delete). Nothing is ever auto-superseded on similarity alone; the agent or you always decide.
 
 ## HTTP
 
