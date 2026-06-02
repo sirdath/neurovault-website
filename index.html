@@ -481,7 +481,7 @@
       <li><span class="privacy-dot"></span><strong>No telemetry.</strong> No analytics, no crash reporter, no phone-home on startup.</li>
       <li><span class="privacy-dot"></span><strong>No account.</strong> There is no NeuroVault login to create or sign into.</li>
       <li><span class="privacy-dot"></span><strong>No cloud sync.</strong> Your vault is a folder of markdown files. Back it up, sync it, or delete it however you want.</li>
-      <li><span class="privacy-dot"></span><strong>Loopback only.</strong> The MCP server binds to <code>127.0.0.1:8765</code>. It refuses connections from other machines.</li>
+      <li><span class="privacy-dot"></span><strong>Loopback only.</strong> The desktop app's HTTP server binds to <code>127.0.0.1:8765</code>. It refuses connections from other machines.</li>
       <li><span class="privacy-dot"></span><strong>No API keys.</strong> NeuroVault never holds one. Cluster naming, future deduplication and folder suggestions all delegate to whatever Claude / Cursor session you already have running, via MCP.</li>
       <li><span class="privacy-dot"></span><strong>Network only on request.</strong> Downloading embedding models on first run. That's the only outbound call NeuroVault makes by default.</li>
     </ul>

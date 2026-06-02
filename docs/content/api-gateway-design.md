@@ -11,7 +11,7 @@ The audience is whoever picks up the implementation. Read it before writing the 
 ## Goals
 
 1. **Expose NeuroVault's HTTP surface to authenticated external clients.** Developers building agents over HTTP get the same recall/remember/graph functionality the local Tauri app uses.
-2. **Don't break anything that already works.** The existing 127.0.0.1:8765 loopback path stays bit-for-bit identical. The local Tauri sidecar, Python MCP proxy, and everything else that talks to it keeps working with zero config changes.
+2. **Don't break anything that already works.** The existing 127.0.0.1:8765 loopback path stays bit-for-bit identical. The local Tauri app, the native Rust MCP server (`neurovault-server --mcp-only`), and everything else that talks to it keeps working with zero config changes.
 3. **Ripping it out has to be cheap.** If the API experiment doesn't get traction, deleting the gateway should be one PR — no archaeological excavation through entangled code.
 4. **Same engine, two shells.** Eventually a headless server build (`cargo build --bin neurovault-api`) drops into a VPS or Docker for teams that don't want a desktop app at all.
 
@@ -28,7 +28,7 @@ The audience is whoever picks up the implementation. Read it before writing the 
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  Tauri webview / Python MCP proxy / curl on localhost    │
+│  Tauri webview / neurovault-server --mcp-only / curl     │
 │        ↓                                                  │
 │  127.0.0.1:8765  ─────► http_server::router()            │  unchanged
 │   (loopback only,            ↓                            │  zero auth
@@ -411,7 +411,7 @@ Total: ~14 commits across 4-5 sessions. The first commit (handler extraction) is
 
 ## What this doc commits to
 
-- **The internal loopback server is sacred.** No middleware additions, no auth, no bind changes. It exists to serve the local Tauri app and the local MCP proxy. If gateway work threatens this, the gateway loses.
+- **The internal loopback server is sacred.** No middleware additions, no auth, no bind changes. It exists to serve the local Tauri app and the local MCP server (`neurovault-server --mcp-only`). If gateway work threatens this, the gateway loses.
 - **Two routers, one handler set.** Both routers call the same `handlers/*` functions. The gateway adds middleware around them. Handlers don't know which router invoked them.
 - **`/v1/` from day one.** No unversioned external API. Future breakage is a `/v2/` mount, not a behaviour change in `/v1/`.
 - **Keys are blake3-hashed at rest.** Plaintext is shown once at creation, never recoverable.
@@ -424,7 +424,7 @@ Total: ~14 commits across 4-5 sessions. The first commit (handler extraction) is
 
 - **Per-key rate limit defaults.** What's the right number? 60 req/min feels reasonable for an agent doing recall + remember in a loop, but tools that call recall in a `for` over 200 candidates would blow that. Start unlimited in v1, observe, set defaults in v2.
 - **Brain creation via gateway.** Should `admin` scope let an external client create brains? On the desktop app the brain list is the user's mental model; an external script creating brains feels wrong. Lean toward "no" — gateway can't create brains; that's a desktop-app-only flow.
-- **MCP-over-HTTP.** The MCP protocol can run over HTTP+SSE, not just stdio. If the gateway speaks MCP natively, remote agents could use it the same way the local Python proxy does. Worth exploring after v1 of REST.
+- **MCP-over-HTTP.** The MCP protocol can run over HTTP+SSE, not just stdio. If the gateway speaks MCP natively, remote agents could use it the same way the local `neurovault-server --mcp-only` (native Rust, stdio) does. Worth exploring after v1 of REST.
 - **Browser CORS for direct-from-frontend access.** A web app calling the gateway directly from JS would need a tighter CORS policy. v1: leave permissive, document the trade-off. If demand emerges, add a per-key `allowed_origins` field.
 - **Tauri / Settings sync of gateway config.** The settings file `api_gateway.json` is read at server startup. Toggling enabled/disabled mid-run requires either a restart or a hot-reload mechanism. Probably restart-only for v1; the toggle UI explains "restart to apply."
 

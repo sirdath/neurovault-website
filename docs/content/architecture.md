@@ -60,12 +60,13 @@
 │                             axum HTTP server (127.0.0.1:8765)        │
 └─────────────────────────────────┼────────────────────────────────────┘
                                   │ loopback HTTP
-                  ┌───────────────┴────────────────┐
-                  │ mcp_proxy.py (~30-50 MB)       │
-                  │   - FastMCP stdio transport    │
-                  │   - urllib → HTTP forwarder    │
-                  │   - thin shim, no heavy deps   │
-                  └───────────────┬────────────────┘
+                  ┌───────────────┴─────────────────────┐
+                  │ neurovault-server --mcp-only (few MB)│
+                  │   - native Rust, rmcp SDK            │
+                  │   - stdio JSON-RPC transport         │
+                  │   - HTTP forwarder → :8765           │
+                  │   - loads no model, opens no DB      │
+                  └───────────────┬─────────────────────┘
                                   │ stdio JSON-RPC
                                   ▼
                   ┌────────────────────────────────┐
@@ -78,7 +79,7 @@
 - **One process.** Python had two processes (desktop + sidecar). That meant two fastembed loads, two SQLite connections, two sources of truth. The Rust version collapses that: the memory layer runs *inside* the Tauri process.
 - **Tauri, not Electron.** WebView2 is Chromium already installed on Windows — no shipping a second browser. The installer drops to 9 MB instead of 150 MB.
 - **HTTP server for agents, Tauri IPC for the UI.** Same code answers both: the UI calls `nv_recall` via Tauri's zero-copy command bus; agents call `/api/recall` over loopback HTTP. Both hit the same `memory::retriever::hybrid_retrieve_throttled`.
-- **FastMCP proxy is a separate tiny process.** Claude Code spawns it fresh each session; it imports nothing heavy (`urllib` + `mcp` stdlib-shaped). The actual memory work lives in the always-running `neurovault.exe`. This is the single most important architectural decision: **the heavy stuff never runs in the agent's process tree.**
+- **The MCP server is a separate tiny process.** Claude Code spawns `neurovault-server --mcp-only` fresh each session — a native Rust stdio MCP server (built on the official **rmcp** SDK) that loads no model and opens no database. The actual memory work lives in the always-running desktop app (`neurovault.exe` on Windows, `NeuroVault.app` on macOS). This is the single most important architectural decision: **the heavy stuff never runs in the agent's process tree.**
 
 ---
 
@@ -276,24 +277,35 @@ hybrid_retrieve_throttled(db, query, opts)
 ### The transport stack
 
 ```
-Claude Code ──spawn──► mcp_proxy.py ──HTTP──► axum on 127.0.0.1:8765 ──► Rust memory::*
-             stdio     (~30-50 MB)            (inside neurovault.exe)
+Claude Code ──spawn──► neurovault-server ──HTTP──► axum on 127.0.0.1:8765 ──► Rust memory::*
+             stdio       --mcp-only                 (inside the desktop app)
+                         (native Rust, few MB)
 ```
 
-Claude Code's `~/.claude.json` (or equivalent) registers the proxy via:
+`neurovault-server` is bundled next to the app binary (on macOS:
+`NeuroVault.app/Contents/MacOS/neurovault-server`). Claude Desktop registers
+it via:
 
 ```json
 {
   "mcpServers": {
     "neurovault": {
-      "command": "uv",
-      "args": ["--directory", "D:/Ai-Brain/engram/server", "run", "python", "-m", "mcp_proxy"]
+      "command": "<path>/neurovault-server",
+      "args": ["--mcp-only"]
     }
   }
 }
 ```
 
-On session start, Claude Code spawns the proxy. The proxy calls `/api/health` to check the desktop app is up, then answers MCP's `tools/list` + `tools/call` by forwarding HTTP requests.
+For the Claude Code CLI:
+
+```bash
+claude mcp add --scope user neurovault "<path>/neurovault-server" -- --mcp-only
+```
+
+(The app's **Settings → Connect Claude Desktop/Code** dialog generates the exact path.)
+
+On session start, Claude Code spawns the server. It calls `/api/health` to check the desktop app is up, then answers MCP's `tools/list` + `tools/call` by forwarding HTTP requests.
 
 ### The tool surface (the agent's contract)
 
@@ -325,8 +337,8 @@ Several features exist specifically so agents don't spam or misuse the memory:
 ### MCP protocol choices
 
 - **Tool annotations** (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) on every tool so Claude Code can auto-confirm safe ones without user prompts.
-- **`outputSchema` + `structuredContent`** — FastMCP auto-derives from Python return types; Claude parses structured JSON instead of regex-ing text.
-- **Sentinel resource** at `neurovault://empty` — some strict MCP clients disconnect on empty `resources/list`; this returns a non-empty array of one dummy resource.
+- **`outputSchema` + `structuredContent`** — the rmcp server declares output schemas so Claude parses structured JSON instead of regex-ing text.
+- **Only the `tools` capability is advertised** — the server declares `tools` and nothing else, so conformant clients never query `resources/list` or `prompts/list`. (rmcp answers either with a successful empty list rather than a `method-not-found` error, which is what some strict clients used to disconnect on.)
 - **Deep-link URL scheme** (`neurovault://engram/<id>[?view=graph]`) — Claude emits clickable markdown links; clicks are forwarded to the running app via Tauri's `single-instance` plugin.
 
 ---
@@ -471,7 +483,7 @@ Every one of these was a real choice between alternatives. Written so a future m
 
 ### fastembed-rs BGE-small-en-v1.5 (384-dim), not Nomic / all-MiniLM / cloud
 - BGE-small scores ~65 MTEB, 10-15% better than MiniLM at the same speed, same 384 dims.
-- Cached at `~/.cache/fastembed/` — shared with the Python version, so migration cost was zero.
+- Cached at `~/.neurovault/.fastembed_cache` (an absolute, app-owned dir; an explicit `FASTEMBED_CACHE_DIR` env still overrides).
 - Reconsider if MTEB ever matters for a specific workload; batch cap at 32 keeps RAM bounded.
 
 ### Hybrid retrieval (3 signals + RRF + title boosts), not pure semantic
@@ -484,10 +496,11 @@ Every one of these was a real choice between alternatives. Written so a future m
 - Most agent calls are quick context checks where 93% vs 87% doesn't matter.
 - Agents are explicitly taught when to flip `rerank=true` via tool docstring.
 
-### MCP stdio proxy forwarding to loopback HTTP, not stdio-native Rust server
-- The proxy is ~30 MB Python (stdlib only). Claude Code spawns it per session.
-- Avoids spawning a full `neurovault.exe` per MCP client. Heavy state stays in the desktop app.
+### MCP stdio server forwarding to loopback HTTP, not a full in-process MCP server
+- `neurovault-server --mcp-only` is a native Rust stdio server (rmcp SDK), a few MB, with zero Python dependency. Claude Code spawns it per session; it loads no model and opens no database.
+- Avoids spawning a full desktop app per MCP client. Heavy state stays in the always-running app.
 - Loopback HTTP is safer than stdio against CVE-2026-30623 (stdio command-injection).
+- *History:* the original implementation here was a thin Python `mcp_proxy.py` (FastMCP, stdlib-only) that did the same forwarding; it was retired once the Rust stdio server landed.
 
 ### Per-brain SQLite files, not one DB with a brain_id column
 - Clean separation — switching brains is `open(brain_id)` on a fresh connection.
@@ -565,9 +578,9 @@ The places a future maintainer will actually be reading/editing:
 - `lib/tauri.ts` — Tauri command wrappers with browser fallbacks.
 - `lib/api.ts` — HTTP API client, prefers `nv_*` Tauri commands with graceful fallback.
 
-**MCP proxy (`server/`):**
-- `mcp_proxy.py` — the only file that matters for MCP integration.
-- `neurovault_server/` — Python codebase kept for optional advanced helpers (pdf ingest, zotero). Spawned on-demand via `run_python_job` Tauri command, not as a persistent process.
+**MCP server (native Rust):**
+- `neurovault-server --mcp-only` — the stdio MCP server (rmcp SDK) that forwards to the desktop app's HTTP API. Built from the same Rust crate, bundled next to the app binary. The only thing that matters for MCP integration.
+- `server/neurovault_server/` — OPTIONAL Python codebase kept for optional advanced ingest helpers (PDF, Zotero). Spawned on-demand / out-of-band, not the MCP path and not a persistent process.
 
 **Eval (`eval/`):**
 - `testset.jsonl` — 30 hand-curated queries with expected title matches.

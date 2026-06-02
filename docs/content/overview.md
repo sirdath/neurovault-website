@@ -34,20 +34,20 @@ You ──▶ NeuroVault desktop app (Tauri, ~35 MB resident)
               │ - Rust memory layer (sqlite + sqlite-vec + BGE embeddings)
               │ - axum HTTP server on 127.0.0.1:8765
               ▼
-        mcp_proxy.py (~30 MB, stdio JSON-RPC ↔ loopback HTTP)
+        neurovault-server --mcp-only (native Rust, rmcp; stdio JSON-RPC ↔ loopback HTTP; loads no model)
               │
               ▼
         Claude Code / Cursor / Desktop / Codex (any MCP client)
 ```
 
-Three processes: the desktop app, the MCP proxy, and the agent. The desktop app owns storage and embeddings. The proxy is a thin shim translating the agent's stdio JSON-RPC into loopback HTTP. The agent talks to the proxy and never sees NeuroVault directly.
+Two processes back the agent session: the always-running desktop app, and the per-session `neurovault-server --mcp-only` stdio server the agent spawns. The desktop app owns storage and embeddings. The MCP server is a native Rust stdio shim (built on the official [rmcp](https://modelcontextprotocol.io) SDK) that loads no model and opens no database — it just translates the agent's stdio JSON-RPC into loopback HTTP to the desktop app on `127.0.0.1:8765`. The agent talks to the shim and never sees NeuroVault directly.
 
 ## What's on disk
 
 - `~/.neurovault/brains/<brain_id>/brain.db` — one SQLite file per brain: engrams, chunks, `vec_chunks` (sqlite-vec), entities, links, BM25 indexes.
 - `~/.neurovault/brains/<brain_id>/vault/` — the markdown source of truth. Every engram is also a `.md` file you can read or edit outside the app.
 - `~/.neurovault/brains/<brain_id>/raw/` — the [drop-folder](#drop-folder): raw files you've pasted in (with a `README.md` guide), waiting for the agent to turn them into notes.
-- `~/.cache/fastembed/` — ONNX model cache for the BGE embedder + reranker. Downloaded once on first run.
+- `~/.neurovault/.fastembed_cache/` — ONNX model cache for the BGE embedder + reranker. Downloaded once on first run. (Override with `FASTEMBED_CACHE_DIR`.)
 
 > [!NOTE]
 > If the app ever breaks, your data is fine — open the vault in any markdown editor. The SQLite database is a rebuildable cache over the `.md` files, not the source of truth.

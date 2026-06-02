@@ -9,7 +9,7 @@ Download the latest installer for your OS from the [releases page](https://githu
 > [!NOTE]
 > The installers are unsigned, so Windows SmartScreen / macOS Gatekeeper will warn on first launch. On Windows choose **More info → Run anyway**; on macOS right-click the app → **Open**. This is expected for an open-source app without a paid signing certificate.
 
-Launch NeuroVault. On first run it downloads the embedding model (~90 MB) into `~/.cache/fastembed/` — that's a one-time step. When the status dot in the bottom bar turns green, the local server is up on `127.0.0.1:8765`.
+Launch NeuroVault. On first run it downloads the embedding model (~90 MB) into `~/.neurovault/.fastembed_cache/` — that's a one-time step. When the status dot in the bottom bar turns green, the local server is up on `127.0.0.1:8765`.
 
 ## 2. Add your first memory
 
@@ -24,12 +24,12 @@ Every note becomes an **engram**: chunked, embedded, and linked. Switch to the [
 
 This is what makes NeuroVault a *memory* rather than a notes app — your agent can now read and write it.
 
-Open **Settings → Connect Claude Code (MCP)** (or **Connect Claude Desktop**). The dialog shows the exact snippet for your install, because it embeds the absolute path to the bundled MCP sidecar. It looks like this:
+Open **Settings → Connect Claude Code (MCP)** (or **Connect Claude Desktop**). The dialog shows the exact snippet for your install, because it embeds the absolute path to the bundled `neurovault-server` binary (the native Rust MCP server, run with `--mcp-only`). It looks like this:
 
 **Claude Code** (one line in a terminal):
 
 ```bash
-claude mcp add --scope user neurovault "<path-to-sidecar>" -- --mcp-only
+claude mcp add --scope user neurovault "<path-to-neurovault-server>" -- --mcp-only
 ```
 
 **Claude Desktop / Cursor** (merge into the MCP config file):
@@ -39,7 +39,7 @@ claude mcp add --scope user neurovault "<path-to-sidecar>" -- --mcp-only
   "mcpServers": {
     "neurovault": {
       "type": "stdio",
-      "command": "<path-to-sidecar>",
+      "command": "<path-to-neurovault-server>",
       "args": ["--mcp-only"]
     }
   }
@@ -47,7 +47,7 @@ claude mcp add --scope user neurovault "<path-to-sidecar>" -- --mcp-only
 ```
 
 > [!IMPORTANT]
-> Copy the snippet from the Settings dialog rather than this page — it fills in the real sidecar path for your machine. Restart the agent after saving. If `mcpServers` already exists, merge the `neurovault` entry in rather than replacing the block.
+> Copy the snippet from the Settings dialog rather than this page — it fills in the real binary path for your machine. Restart the agent after saving. If `mcpServers` already exists, merge the `neurovault` entry in rather than replacing the block.
 
 ## 4. The shortest possible run
 
