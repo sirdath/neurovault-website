@@ -32,18 +32,18 @@
   const REPO_SOURCE    = "https://github.com/sirdath/NeuroVault#for-developers";
   const GH_API_LATEST  = "https://api.github.com/repos/sirdath/NeuroVault/releases/latest";
 
-  // Present the most relevant download copy for the visitor. Windows is the
-  // only platform with a published binary right now, so non-Windows visitors
-  // see a "Build from source" primary button + a "coming soon" hint.
+  // Present the most relevant download copy for the visitor. Windows (NSIS)
+  // and macOS (Apple Silicon, DMG) both ship published binaries; Linux is
+  // still build-from-source for now.
   function relabelButton(labelEl, subEl, linkEl) {
     if (!labelEl || !linkEl) return;
     if (os === "macos") {
       labelEl.textContent = "Download for macOS";
-      if (subEl) subEl.textContent = "Apple Silicon (M1 / M2 / M3 / M4) · DMG";
+      if (subEl) subEl.textContent = "Apple Silicon (M1–M4) · DMG · ~23 MB";
       linkEl.href = WINDOWS_LATEST;
     } else if (os === "linux") {
       labelEl.textContent = "Build from source (Linux)";
-      if (subEl) subEl.textContent = "Binary coming soon · uv + Tauri";
+      if (subEl) subEl.textContent = "Binary coming soon · Rust + Tauri";
       linkEl.href = REPO_SOURCE;
     } else if (os === "android") {
       labelEl.textContent = "Desktop only";
@@ -51,7 +51,7 @@
       linkEl.href = RELEASES_PAGE;
     } else {
       labelEl.textContent = "Download for Windows";
-      if (subEl) subEl.textContent = "~10 MB · x64 installer";
+      if (subEl) subEl.textContent = "x64 installer · NSIS";
       linkEl.href = WINDOWS_LATEST;
     }
   }
