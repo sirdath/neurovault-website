@@ -24,7 +24,9 @@ Every note becomes an **engram**: chunked, embedded, and linked. Switch to the [
 
 This is what makes NeuroVault a *memory* rather than a notes app — your agent can now read and write it.
 
-Open **Settings → Connect Claude Code (MCP)** (or **Connect Claude Desktop**). The dialog shows the exact snippet for your install, because it embeds the absolute path to the bundled `neurovault-server` binary (the native Rust MCP server, run with `--mcp-only`). It looks like this:
+Open **Settings → Connect Claude Code (MCP)**. The fastest path: click **Register automatically** — NeuroVault merges itself into your `~/.claude.json` (your existing login and config are preserved). Restart your Claude Code session and you're done. You don't even need to keep the app open: the MCP server **auto-starts the backend** on first use.
+
+Prefer to wire it by hand? The same dialog shows the exact snippet for your install — it embeds the absolute path to the bundled `neurovault-server` binary (the native Rust MCP server, run with `--mcp-only`):
 
 **Claude Code** (one line in a terminal):
 
@@ -69,10 +71,10 @@ The fact persisted across sessions with no context window in between. That's the
 
 ## Staying up to date
 
-NeuroVault checks for a newer release a few seconds after launch. When one exists, an **Update** button appears in the top bar — click it to grab the new version (and **Settings → Updates** has a manual "Check for updates" too). Dismiss the button with the × and it stays quiet until the *next* release.
+NeuroVault checks for a newer release a few seconds after launch. When one exists, an **Update** button appears in the top bar — click it and the new version **downloads, verifies, installs, and relaunches in place** (no manual reinstall). **Settings → Updates** has a manual "Check for updates" too. Dismiss the button with the × and it stays quiet until the *next* release.
 
 > [!NOTE]
-> While the installers are unsigned, the Update button opens the release page for you to download and reinstall. One-click download-and-install lands once update signing is enabled on the release pipeline.
+> Updates are **cryptographically signed** (separate from OS code-signing) and verified before install, so the one-click flow is safe even though the installers themselves aren't OS-signed. Auto-update is live for **v0.5.1 and later**; a build older than that updates manually one last time.
 
 ## What to read next
 
@@ -81,4 +83,4 @@ NeuroVault checks for a newer release a few seconds after launch. When one exist
 - **[HTTP API](#http-api)** — if you'd rather talk to NeuroVault directly over loopback HTTP.
 
 > [!TIP]
-> Keeping work and personal memory apart? Create separate **brains** from the brain selector in the top-left. Recall stays within the active brain unless you explicitly search across brains.
+> Keeping work and personal memory apart? Create separate **brains** from the brain selector in the top-left. Recall stays within the active brain unless you explicitly search across brains. Working across projects with an agent? Drop a `.neurovault` file in a project folder to scope that folder's memory to its own brain automatically.

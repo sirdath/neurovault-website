@@ -32,7 +32,7 @@
 - It is **not** a Python app anymore. Phase 0-9 of the migration moved the entire hot path into Rust in-process.
 
 **Concrete numbers** (measured on the current build, April 2026):
-- Installer: **9.3 MB** (was 76 MB before the Rust migration).
+- Download: **~24 MB** (macOS DMG) / **~26 MB** (Windows installer) — a fraction of an Electron app's 150 MB+.
 - Idle RAM: **~35 MB** (was 500 MB – 3 GB with the Python sidecar).
 - Cold start: **<500 ms** to interactive.
 - Recall latency: **20-50 ms** median for the default pipeline, **~680 ms** when the optional cross-encoder reranker is enabled.
@@ -77,7 +77,7 @@
 **Why this shape**, specifically:
 
 - **One process.** Python had two processes (desktop + sidecar). That meant two fastembed loads, two SQLite connections, two sources of truth. The Rust version collapses that: the memory layer runs *inside* the Tauri process.
-- **Tauri, not Electron.** WebView2 is Chromium already installed on Windows — no shipping a second browser. The installer drops to 9 MB instead of 150 MB.
+- **Tauri, not Electron.** WebView2 is Chromium already installed on Windows — no shipping a second browser. The download is tens of MB (≈24 MB on macOS) instead of an Electron app's 150 MB+.
 - **HTTP server for agents, Tauri IPC for the UI.** Same code answers both: the UI calls `nv_recall` via Tauri's zero-copy command bus; agents call `/api/recall` over loopback HTTP. Both hit the same `memory::retriever::hybrid_retrieve_throttled`.
 - **The MCP server is a separate tiny process.** Claude Code spawns `neurovault-server --mcp-only` fresh each session — a native Rust stdio MCP server (built on the official **rmcp** SDK) that loads no model and opens no database. The actual memory work lives in the always-running desktop app (`neurovault.exe` on Windows, `NeuroVault.app` on macOS). This is the single most important architectural decision: **the heavy stuff never runs in the agent's process tree.**
 
@@ -309,6 +309,8 @@ On session start, Claude Code spawns the server. It calls `/api/health` to check
 
 ### The tool surface (the agent's contract)
 
+The server exposes **~46 tools** via a data-driven registry, gated by a **tier** so an agent only loads the slice it needs: `minimal` (3) · `lite` (8, the default) · `standard` (18) · `full` (46). Set it with `NEUROVAULT_MCP_TIER`, `~/.neurovault/mcp_tier.txt`, or Settings → MCP — fewer tools means less tool-definition context the agent pays for up front. Every tool takes an optional `brain` parameter. A representative slice:
+
 **Read-only (auto-approvable):**
 - `recall(query, mode, limit, brain, include_observations, rerank, spread_hops, as_of)` — hybrid search. Primary tool. Supports search operators inside `query`: `kind:`, `folder:`, `after:`, `before:`, `entity:`, `state:`, `agent:`.
 - `related(engram_id, hops, limit, min_similarity, link_types, include_observations, brain)` — direct 1-or-2-hop neighbour lookup. ~50× cheaper than a follow-up recall.
@@ -416,7 +418,7 @@ npx tauri build            # ~8-15 min first time, ~3-5 min incremental
 
 Produces:
 - `src-tauri/target/release/neurovault.exe` — 32 MB bare binary (stripped)
-- `src-tauri/target/release/bundle/nsis/NeuroVault_0.1.0_x64-setup.exe` — 9.3 MB installer
+- `src-tauri/target/release/bundle/nsis/NeuroVault_<version>_x64-setup.exe` — the Windows installer (~26 MB)
 - `src-tauri/target/release/bundle/msi/NeuroVault_0.1.0_x64_en-US.msi` — 13 MB MSI
 
 ### Cargo release profile (the LTO config that matters)
@@ -470,7 +472,7 @@ Every one of these was a real choice between alternatives. Written so a future m
 
 ### Rust + Tauri, not Python + Electron
 - Before: Python FastAPI + PyInstaller sidecar + Electron frontend. 76 MB installer, 500 MB-3 GB RAM, crashed a TDR-prone Intel iGPU laptop regularly.
-- After: single Rust+Tauri binary, 9 MB installer, 35 MB idle.
+- After: single Rust+Tauri binary, ~24-26 MB download, ~35 MB idle.
 - **Reversibility:** none. This was a 16-day migration (Phases 0-9). Git history `rust-migration` branch preserves the move.
 
 ### SQLite + sqlite-vec, not LanceDB / Qdrant / Pinecone
