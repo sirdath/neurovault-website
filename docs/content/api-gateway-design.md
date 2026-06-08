@@ -2,7 +2,7 @@
 
 This is the architecture decision doc for NeuroVault's external API layer — the surface that lets people building their own agents (LangChain, n8n workflows, custom Python scripts, future hosted teams) point at NeuroVault as a memory backend over HTTP.
 
-**It is a design, not an implementation.** Nothing in the repo currently does any of this. The point is to lock in the boundary before the first line of code, so the gateway ships as a true sibling to the existing infrastructure and can be ripped out cleanly if the experiment fails.
+**Status: implemented.** The external gateway shipped — enable it in **Settings → "API Gateway (External HTTP)"** and create scoped bearer-token keys (see the [HTTP API](#http-api) reference for the request shapes). This document captures the original boundary design; the code lives in `src-tauri/src/memory/api_gateway.rs` + `api_keys.rs`, mounted as a true sibling to the loopback server.
 
 The audience is whoever picks up the implementation. Read it before writing the first line of code, and push back on anything below before code lands.
 

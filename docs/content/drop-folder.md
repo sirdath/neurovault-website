@@ -44,4 +44,4 @@ The agent reads each file, cleans it up, and writes a proper note with the stand
 
 ## Why no bundled converters?
 
-PDF/Docx/HTML extraction libraries are heavy, brittle on real-world files, and produce flat text that still needs cleanup. Handing the raw file to an agent that already understands your vault's conventions yields a better note and keeps the app small. If you need fully-automated batch conversion, NeuroVault ships optional Python ingest helpers (PDF, Zotero) that can be run out-of-band — see [Architecture](#architecture).
+PDF/Docx/HTML extraction libraries are heavy, brittle on real-world files, and produce flat text that still needs cleanup. Handing the raw file to an agent that already understands your vault's conventions yields a better note and keeps the app small. There's no bundled batch converter **by design** — your agent *is* the converter. (An archived Python prototype under `server/` had experimental PDF/Zotero helpers; they aren't part of the current Rust app.)

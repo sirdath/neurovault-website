@@ -3,6 +3,8 @@
 The external HTTP API for talking to NeuroVault from outside the desktop app — useful for agents you build yourself (LangChain, n8n, Python scripts), team scenarios, or any workflow that needs memory over HTTP.
 
 > **You probably don't need this if you're using Claude Desktop / Claude Code.** Those already talk to NeuroVault via MCP over stdio (no HTTP, no API keys, no setup beyond the Settings → MCP panel). The HTTP API is for when MCP isn't an option.
+>
+> **Two servers, don't confuse them:** the always-on **loopback** server on `127.0.0.1:8765` (what the app and MCP use internally) needs *no* key and isn't meant for outside callers. This page documents the **external gateway** — a *separate*, opt-in surface with bearer-token auth that you enable explicitly.
 
 ## Quick start
 
