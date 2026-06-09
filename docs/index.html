@@ -20,10 +20,10 @@
      /index.html and /docs/. -->
 <script>
   try {
-    if (localStorage.getItem("nv.theme") === "blue") {
-      document.documentElement.setAttribute("data-theme", "blue");
+    if (localStorage.getItem("nv.theme") === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
       var m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.setAttribute("content", "#0a1628");
+      if (m) m.setAttribute("content", "#f5f8fd");
     }
   } catch (e) {}
 </script>
@@ -41,10 +41,30 @@
   <nav class="nav-links">
     <a href="../index.html#features">Features</a>
     <a href="../index.html#how">How it works</a>
-    <a href="./" class="nav-link-active">Docs</a>
     <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">GitHub ↗</a>
   </nav>
-  <a href="../index.html#download" class="nav-cta"><svg class="nav-cta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</a>
+  <div class="nav-actions">
+    <label class="themeToggle st-sunMoonThemeToggleBtn" for="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">
+      <input type="checkbox" id="themeToggle" class="themeToggleInput" />
+      <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+        <mask id="moon-mask">
+          <rect x="0" y="0" width="20" height="20" fill="white"></rect>
+          <circle cx="11" cy="3" r="8" fill="black"></circle>
+        </mask>
+        <circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle>
+        <g class="sunRays">
+          <circle class="sunRay sunRay1" cx="18" cy="10" r="1.5"></circle>
+          <circle class="sunRay sunRay2" cx="14" cy="16.928" r="1.5"></circle>
+          <circle class="sunRay sunRay3" cx="6" cy="16.928" r="1.5"></circle>
+          <circle class="sunRay sunRay4" cx="2" cy="10" r="1.5"></circle>
+          <circle class="sunRay sunRay5" cx="6" cy="3.072" r="1.5"></circle>
+          <circle class="sunRay sunRay6" cx="14" cy="3.072" r="1.5"></circle>
+        </g>
+      </svg>
+    </label>
+    <a href="./" class="nav-docs" aria-current="page"><svg class="nav-docs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Docs</a>
+    <a href="../index.html#download" class="nav-cta"><svg class="nav-cta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</a>
+  </div>
 </header>
 
 <!-- Mobile sidebar toggle. On desktop the sidebar is always visible;

@@ -55,13 +55,13 @@
 .nav-cta-ic{width:15px;height:15px}
 </style>
 
-<!-- Apply stored theme before paint (prevents peach → blue flash on reload) -->
+<!-- Apply stored theme before paint (prevents dark → light flash on reload) -->
 <script>
   try {
-    if (localStorage.getItem("nv.theme") === "blue") {
-      document.documentElement.setAttribute("data-theme", "blue");
+    if (localStorage.getItem("nv.theme") === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
       var m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.setAttribute("content", "#0a1628");
+      if (m) m.setAttribute("content", "#f5f8fd");
     }
   } catch (e) {}
 </script>
@@ -97,7 +97,28 @@
     <a href="#privacy">Privacy</a>
     <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">GitHub ↗</a>
   </nav>
-  <a href="#download" class="nav-cta"><svg class="nav-cta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</a>
+  <div class="nav-actions">
+    <label class="themeToggle st-sunMoonThemeToggleBtn" for="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">
+      <input type="checkbox" id="themeToggle" class="themeToggleInput" />
+      <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+        <mask id="moon-mask">
+          <rect x="0" y="0" width="20" height="20" fill="white"></rect>
+          <circle cx="11" cy="3" r="8" fill="black"></circle>
+        </mask>
+        <circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle>
+        <g class="sunRays">
+          <circle class="sunRay sunRay1" cx="18" cy="10" r="1.5"></circle>
+          <circle class="sunRay sunRay2" cx="14" cy="16.928" r="1.5"></circle>
+          <circle class="sunRay sunRay3" cx="6" cy="16.928" r="1.5"></circle>
+          <circle class="sunRay sunRay4" cx="2" cy="10" r="1.5"></circle>
+          <circle class="sunRay sunRay5" cx="6" cy="3.072" r="1.5"></circle>
+          <circle class="sunRay sunRay6" cx="14" cy="3.072" r="1.5"></circle>
+        </g>
+      </svg>
+    </label>
+    <a href="/docs/" class="nav-docs"><svg class="nav-docs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Docs</a>
+    <a href="#download" class="nav-cta"><svg class="nav-cta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</a>
+  </div>
 </header>
 
 <!-- Hero -->
@@ -155,8 +176,8 @@
     <!-- Metric badges -->
     <div class="hero-stats">
       <div class="stat">
-        <div class="stat-num">90<span class="stat-unit">%</span></div>
-        <div class="stat-label">hit@5 on<br/>long-memory bench</div>
+        <div class="stat-num">3<span class="stat-unit">-way</span></div>
+        <div class="stat-label">hybrid recall<br/>vector + keyword + graph</div>
       </div>
       <div class="stat">
         <div class="stat-num">0<span class="stat-unit"> ms</span></div>
@@ -170,6 +191,23 @@
         <div class="stat-num">1<span class="stat-unit">-click</span></div>
         <div class="stat-label">install<br/>&amp; Claude integration</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- Up and running in seconds -->
+<section class="quickstart" aria-label="Get started in the terminal">
+  <div class="quickstart-inner reveal">
+    <div class="section-kicker">UP AND RUNNING IN SECONDS</div>
+    <h2 class="section-title">One download. One line. It remembers.</h2>
+    <div class="nv-terminal" role="img" aria-label="Terminal: install NeuroVault, connect your agent with one line, then remember and recall across sessions">
+      <div class="nv-term-bar">
+        <span class="nv-term-dot nv-term-dot--close"></span>
+        <span class="nv-term-dot nv-term-dot--min"></span>
+        <span class="nv-term-dot nv-term-dot--max"></span>
+        <span class="nv-term-title">neurovault — zsh</span>
+      </div>
+      <pre class="nv-term-body"><code id="nv-term-out"></code><span class="nv-term-cursor" aria-hidden="true"></span></pre>
     </div>
   </div>
 </section>
@@ -190,99 +228,33 @@
   </div>
 </section>
 
-<!-- ASCII marquee ticker — transition beat between the pitch and features
-     sections. Pauses on hover, respects reduced-motion. -->
-<section class="marquee" aria-hidden="true" id="nv-marquee">
-  <div class="marquee-track">
-    <span class="marquee-group">
-      <span>$ recall("claude forgets")</span>
-      <span class="sep">◆</span>
-      <span>ANALYTICS MODE</span>
-      <span class="sep">◆</span>
-      <span>$ /name-clusters</span>
-      <span class="sep">◆</span>
-      <span>PAGERANK + LOUVAIN</span>
-      <span class="sep">◆</span>
-      <span>NO API KEYS</span>
-      <span class="sep">◆</span>
-      <span>245 MEMORIES</span>
-      <span class="sep">●─●─●</span>
-      <span>LOCAL-FIRST</span>
-      <span class="sep">◆</span>
-      <span>NO TELEMETRY</span>
-      <span class="sep">◆</span>
-      <span>$ remember("my preferences") ✓</span>
-      <span class="sep">∞</span>
-      <span>PERSISTENT</span>
-      <span class="sep">◆</span>
-      <span>[[wikilinks]]</span>
-      <span class="sep">◆</span>
-      <span>YOURS FOREVER</span>
-      <span class="sep">╭─●─╮</span>
-      <span>$ compile_page</span>
-      <span class="sep">◆</span>
-      <span>MIT LICENSED</span>
-      <span class="sep">◆</span>
-      <span>⌘K PALETTE</span>
-      <span class="sep">◆</span>
-      <span>EBBINGHAUS DECAY</span>
-      <span class="sep">◆</span>
-      <span>$ about("neurovault")</span>
-      <span class="sep">✦</span>
-      <span>SQLITE + BM25 + VEC</span>
-      <span class="sep">◆</span>
-      <span>HYBRID RETRIEVAL</span>
-      <span class="sep">◯━◯━◯</span>
-      <span>$ recall("backend")</span>
-      <span class="sep">◆</span>
-      <span>3 HITS, 1.2ms</span>
-      <span class="sep">◆</span>
-    </span>
-    <!-- duplicate group for seamless loop -->
-    <span class="marquee-group" aria-hidden="true">
-      <span>$ recall("claude forgets")</span>
-      <span class="sep">◆</span>
-      <span>ANALYTICS MODE</span>
-      <span class="sep">◆</span>
-      <span>$ /name-clusters</span>
-      <span class="sep">◆</span>
-      <span>PAGERANK + LOUVAIN</span>
-      <span class="sep">◆</span>
-      <span>NO API KEYS</span>
-      <span class="sep">◆</span>
-      <span>245 MEMORIES</span>
-      <span class="sep">●─●─●</span>
-      <span>LOCAL-FIRST</span>
-      <span class="sep">◆</span>
-      <span>NO TELEMETRY</span>
-      <span class="sep">◆</span>
-      <span>$ remember("my preferences") ✓</span>
-      <span class="sep">∞</span>
-      <span>PERSISTENT</span>
-      <span class="sep">◆</span>
-      <span>[[wikilinks]]</span>
-      <span class="sep">◆</span>
-      <span>YOURS FOREVER</span>
-      <span class="sep">╭─●─╮</span>
-      <span>$ compile_page</span>
-      <span class="sep">◆</span>
-      <span>MIT LICENSED</span>
-      <span class="sep">◆</span>
-      <span>⌘K PALETTE</span>
-      <span class="sep">◆</span>
-      <span>EBBINGHAUS DECAY</span>
-      <span class="sep">◆</span>
-      <span>$ about("neurovault")</span>
-      <span class="sep">✦</span>
-      <span>SQLITE + BM25 + VEC</span>
-      <span class="sep">◆</span>
-      <span>HYBRID RETRIEVAL</span>
-      <span class="sep">◯━◯━◯</span>
-      <span>$ recall("backend")</span>
-      <span class="sep">◆</span>
-      <span>3 HITS, 1.2ms</span>
-      <span class="sep">◆</span>
-    </span>
+<!-- Why it's different — the "old way" vs NeuroVault. The single clearest
+     way to explain the value: a side-by-side contrast. -->
+<section id="why" class="compare">
+  <div class="section-head reveal">
+    <div class="section-kicker">WHY IT'S DIFFERENT</div>
+    <h2 class="section-title">Stop re-explaining yourself.</h2>
+    <p class="section-lede">Every new session, your agent forgets. So you compensate — and the workarounds cost you more context than they save.</p>
+  </div>
+  <div class="compare-grid reveal">
+    <div class="compare-col compare-bad">
+      <h3>The old way</h3>
+      <ul class="compare-list">
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Re-explain your stack, your preferences, your decisions — every single session.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Cram everything into a 22k-token <code>CLAUDE.md</code> that bloats every prompt — and still goes stale.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Past chats vanish the moment you close the window. The agent starts from zero.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Your "memory" lives in one vendor's cloud, in a format you can't read or move.</span></li>
+      </ul>
+    </div>
+    <div class="compare-col compare-good">
+      <h3>With NeuroVault</h3>
+      <ul class="compare-list">
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Say it <strong>once</strong>. Any MCP agent recalls it the moment it's relevant.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Recall returns the handful of passages that <strong>actually matter</strong> — not the whole file.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Notes, decisions, people, projects persist across every session and every agent.</span></li>
+        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Plain markdown on your disk. <strong>Yours forever</strong>, readable in any editor.</span></li>
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -298,72 +270,56 @@
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
       <h3>Never leaves your laptop</h3>
-      <p>No cloud. No account. No telemetry. Just files.</p>
+      <p>No cloud, no account, no telemetry — just plain markdown files on your
+        disk. The backend binds to loopback only and refuses outside connections.</p>
     </article>
 
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
       <h3>See how you think</h3>
-      <p>Every note is a node. Force-directed graph, typed links, live.</p>
+      <p>Every note is a node in a live, force-directed graph. Analytics mode
+        sizes nodes by influence (PageRank) and tints clusters of linked ideas
+        (Louvain), so the shape of your knowledge is visible at a glance.</p>
     </article>
 
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <h3>Finds anything, fast</h3>
-      <p>Semantic + keyword + graph search, fused. Weighted by recency.</p>
+      <h3>Recall that thinks like you do</h3>
+      <p>Hybrid search fuses semantic, keyword, and graph hits, reranks them, and
+        weights by recency — so recall surfaces what you meant, not just what
+        you literally typed.</p>
     </article>
 
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
       <h3>Write without friction</h3>
-      <p>Live preview, <code>[[wikilinks]]</code>, slash commands, 7 themes.</p>
+      <p>Live preview, <code>[[wikilinks]]</code>, a <code>&#8984;K</code> command
+        palette, VS Code-style tabs, and 7 themes. It behaves like the editor you
+        already use all day.</p>
     </article>
 
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg></span>
-      <h3>AI drafts, you approve</h3>
-      <p>Claude synthesizes wiki pages from raw notes. Every change is a diff.</p>
+      <h3>AI does the busywork &mdash; in your session</h3>
+      <p>Claude drafts wiki pages from your raw notes and names your clusters,
+        running in the Claude / Cursor session you already have open via MCP.
+        No API keys. Every change is a diff you approve.</p>
+    </article>
+
+    <article class="feature reveal">
+      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>
+      <h3>Works with your agent &mdash; zero setup</h3>
+      <p>One click writes NeuroVault's MCP entry into <code>~/.claude.json</code>
+        (your login untouched). The agent auto-starts the backend on first use —
+        no "is the server running?". Just <code>recall()</code>.</p>
     </article>
 
     <article class="feature reveal">
       <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg></span>
       <h3>A brain per context</h3>
-      <p>Work, research, personal — one keystroke. Obsidian-compatible.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span>
-      <h3>Claude remembers everything</h3>
-      <p>One JSON in your agent config. Persistent memory, every chat.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg></span>
-      <h3>Thinks like you do</h3>
-      <p>Recall walks the graph — finds what you meant, not just what you typed.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg></span>
-      <h3>See your brain's structure</h3>
-      <p>Analytics mode: bigger nodes for what gets referenced most (PageRank),
-        soft tints for clusters of linked notes (Louvain). Tip bar explains
-        each node's role on hover.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.2 1.2 0 0 0-1.72 0L2.36 18.64a1.2 1.2 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M7 8H3"/><path d="M21 16h-4"/></svg></span>
-      <h3>Your AI session names your clusters</h3>
-      <p>No API keys. The <code>/name-clusters</code> skill runs in your
-        existing Claude / Cursor session via MCP. Same pattern coming for
-        deduplication, folder filing, and frontmatter lint.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-      <h3>The agent turns it on</h3>
-      <p>Your MCP agent auto-starts the memory backend on first use — no
-        opening the app, no "is the server running?". Just <code>recall()</code>.</p>
+      <p>Work, research, personal — switch brains with one keystroke,
+        Obsidian-compatible. Opt a project folder into its own brain with a
+        <code>.neurovault</code> file; each codebase gets memory scoped to itself.</p>
     </article>
 
     <article class="feature reveal">
@@ -371,20 +327,6 @@
       <h3>A widget, not a window</h3>
       <p>A tiny floating control parks in the corner: backend status, start /
         pause, open the app. Shrink it to just the logo, or hide it entirely.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>
-      <h3>One-click Claude Code setup</h3>
-      <p>Connect Claude Code in a single click — NeuroVault writes its own MCP
-        entry into <code>~/.claude.json</code>, leaving your login untouched.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span>
-      <h3>Memory follows the folder</h3>
-      <p>Opt a project directory into its own brain with a <code>.neurovault</code>
-        file — each codebase gets memory scoped to itself, automatically.</p>
     </article>
 
   </div> <!-- /.feature-grid -->

@@ -32,38 +32,14 @@
   const REPO_SOURCE    = "https://github.com/sirdath/NeuroVault#for-developers";
   const GH_API_LATEST  = "https://api.github.com/repos/sirdath/NeuroVault/releases/latest";
 
-  // Present the most relevant download copy for the visitor. Windows (NSIS)
-  // and macOS (Apple Silicon, DMG) both ship published binaries; Linux is
-  // still build-from-source for now.
-  function relabelButton(labelEl, subEl, linkEl) {
-    if (!labelEl || !linkEl) return;
-    if (os === "macos") {
-      labelEl.textContent = "Download for macOS";
-      if (subEl) subEl.textContent = "Apple Silicon (M1–M4) · DMG · ~23 MB";
-      linkEl.href = WINDOWS_LATEST;
-    } else if (os === "linux") {
-      labelEl.textContent = "Build from source (Linux)";
-      if (subEl) subEl.textContent = "Binary coming soon · Rust + Tauri";
-      linkEl.href = REPO_SOURCE;
-    } else if (os === "android") {
-      labelEl.textContent = "Desktop only";
-      if (subEl) subEl.textContent = "Not packaged for mobile";
-      linkEl.href = RELEASES_PAGE;
-    } else {
-      labelEl.textContent = "Download for Windows";
-      if (subEl) subEl.textContent = "x64 installer · NSIS";
-      linkEl.href = WINDOWS_LATEST;
-    }
-  }
-
   // Pick the right release asset for the visitor's OS. Patterns match
   // Tauri's bundle output filenames (NSIS for Windows, DMG for macOS,
   // AppImage / DEB for Linux). When the asset for the current OS isn't
   // present yet (e.g. v0.1.1 only has Windows; macOS + Linux ship in
   // v0.1.2 once the cross-platform CI workflow runs), we just don't
-  // upgrade the link — the relabelButton() fallback already pointed at
-  // the right place ("Build from source" for non-Windows today).
-  function pickAssetForOs(assets) {
+  // upgrade the link — the static markup href (the releases page) already
+  // points somewhere valid.
+  function pickAssetForOs(assets, forOs = os) {
     // Apple Silicon detection is approximate via `userAgent` — Apple
     // doesn't expose CPU directly; we detect via Safari + macOS
     // heuristics. Default to arm64 since that's what most modern Macs
@@ -74,11 +50,11 @@
       window.matchMedia?.("(prefers-color-scheme: dark)") !== null  // weak signal
     );
     let pattern;
-    if (os === "windows") {
+    if (forOs === "windows") {
       pattern = /_x64-setup\.exe$/i;
-    } else if (os === "macos") {
+    } else if (forOs === "macos") {
       pattern = macIsArm ? /_aarch64\.dmg$/i : /_x64\.dmg$/i;
-    } else if (os === "linux") {
+    } else if (forOs === "linux") {
       // Prefer AppImage (universally runnable); fall back to .deb if
       // only that's there.
       const app = assets.find(
@@ -94,18 +70,18 @@
     );
   }
 
-  function osLabel() {
-    if (os === "windows") return "Windows";
-    if (os === "macos")   return "macOS";
-    if (os === "linux")   return "Linux";
+  function osLabel(forOs = os) {
+    if (forOs === "windows") return "Windows";
+    if (forOs === "macos")   return "macOS";
+    if (forOs === "linux")   return "Linux";
     return "your platform";
   }
 
   // Ask the GitHub API for the latest release, pick the asset matching
   // the visitor's OS, and rewrite the download buttons to point directly
   // at it. On failure (rate-limit, offline, API outage, or asset not
-  // present yet) we keep the relabelButton() fallback that already ran.
-  async function resolveDirectInstaller() {
+  // present yet) the static markup (label + releases-page href) stands.
+  async function resolveDirectInstaller(forOs = os) {
     try {
       const res = await fetch(GH_API_LATEST, {
         headers: { Accept: "application/vnd.github+json" },
@@ -113,7 +89,7 @@
       if (!res.ok) return null;
       const data = await res.json();
       const assets = Array.isArray(data.assets) ? data.assets : [];
-      const asset = pickAssetForOs(assets);
+      const asset = pickAssetForOs(assets, forOs);
       if (!asset || !asset.browser_download_url) return null;
       const mb = asset.size ? (asset.size / (1024 * 1024)).toFixed(1) : null;
       const kind =
@@ -124,7 +100,7 @@
         : "installer";
       return {
         url: asset.browser_download_url,
-        label: `Download for ${osLabel()}`,
+        label: `Download for ${osLabel(forOs)}`,
         sizeLabel: mb ? `${mb} MB · ${kind}` : kind,
         version: data.tag_name || "",
       };
@@ -184,44 +160,20 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    relabelButton(
-      document.getElementById("primary-label"),
-      document.getElementById("primary-sub"),
-      document.getElementById("primary-download")
-    );
-    // The bottom CTA has its own label/sub ids but shares the same <a>'s
-    // href — find the enclosing anchor and relabel consistently.
-    const ctaLabel = document.getElementById("cta-label");
-    const ctaSub   = document.getElementById("cta-sub");
-    if (ctaLabel) {
-      const ctaAnchor = ctaLabel.closest("a");
-      relabelButton(ctaLabel, ctaSub, ctaAnchor);
-    }
+    // Two explicit download buttons, always shown: the primary is the
+    // **Windows** installer; the glass button is the **macOS** DMG. (We used
+    // to make the primary auto-detect the visitor's OS, which on a Mac
+    // duplicated the dedicated Mac button — two "Download for Mac" CTAs.)
+    // The markup already labels the primary "Download for Windows"; below we
+    // just upgrade each to a direct download URL when the GitHub API answers.
+    resolveDirectInstaller("windows").then(applyDirectInstaller); // primary + bottom CTA -> .exe
+    applyMacDirectDownload();                                     // glass buttons -> .dmg
 
-    // Fire-and-forget: upgrade buttons to a direct download URL for the
-    // visitor's OS. Fires after the initial label set so users never see
-    // a broken state.
-    if (os === "windows" || os === "macos" || os === "linux") {
-      resolveDirectInstaller().then(applyDirectInstaller);
-    }
-    // The dedicated Mac glass button is redundant for visitors who are
-    // already on macOS — the primary auto-detect button already says
-    // "Download for macOS". Hide both Mac buttons in that case so the
-    // page doesn't show two Mac CTAs side by side. Windows / Linux /
-    // mobile visitors still see the Mac button so they can share the
-    // page with Mac friends.
+    // Mac visitors get a small "On an Intel Mac?" escape hatch — the browser
+    // doesn't expose CPU arch on macOS, so we surface it for anyone on Mac.
     if (os === "macos") {
-      for (const id of ["mac-download", "cta-mac-download"]) {
-        const el = document.getElementById(id);
-        if (el) el.hidden = true;
-      }
-      // Mac visitors also get a small "On an Intel Mac?" escape hatch.
-      // CPU architecture is not exposed by the browser on macOS, so we
-      // surface the link to anyone on Mac and let them self-select.
       const intelHint = document.getElementById("intel-mac-hint");
       if (intelHint) intelHint.hidden = false;
-    } else {
-      applyMacDirectDownload();
     }
   });
 
@@ -256,34 +208,34 @@
     });
   });
 
-  // ----- Theme toggle ------------------------------------------------------
-  // Two themes: "peach" (default, Claude brand) and "blue" (app-icon palette).
-  // Persisted to localStorage so the choice survives reloads.
+  // ----- Theme toggle: dark (default) ↔ light ------------------------------
+  // Persisted to localStorage so the choice survives reloads (and an early
+  // inline block in the page <head> applies it before first paint).
   const THEME_KEY = "nv.theme";
   const root = document.documentElement;
 
   function applyTheme(theme) {
-    if (theme === "blue") {
-      root.setAttribute("data-theme", "blue");
+    if (theme === "light") {
+      root.setAttribute("data-theme", "light");
     } else {
       root.removeAttribute("data-theme");
     }
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "blue" ? "#0a1628" : "#0b0b12");
+    if (meta) meta.setAttribute("content", theme === "light" ? "#f5f8fd" : "#0b0b12");
   }
 
-  // Apply stored preference ASAP (before paint) via the early block at the
-  // top of index.html; this runs once more to sync any UI state.
   const stored = (() => {
     try { return localStorage.getItem(THEME_KEY); } catch { return null; }
   })();
-  applyTheme(stored === "blue" ? "blue" : "peach");
+  applyTheme(stored === "light" ? "light" : "dark");
 
-  const toggle = document.getElementById("theme-toggle");
+  // The toggle is a checkbox driving the animated sun/moon SVG.
+  // Convention: checked = sun = light mode; unchecked = moon = dark mode.
+  const toggle = document.getElementById("themeToggle");
   if (toggle) {
-    toggle.addEventListener("click", () => {
-      const current = root.getAttribute("data-theme") === "blue" ? "blue" : "peach";
-      const next = current === "blue" ? "peach" : "blue";
+    toggle.checked = root.getAttribute("data-theme") === "light";
+    toggle.addEventListener("change", () => {
+      const next = toggle.checked ? "light" : "dark";
       applyTheme(next);
       try { localStorage.setItem(THEME_KEY, next); } catch { /* ignore quota */ }
     });
@@ -311,5 +263,117 @@
       { passive: true }
     );
     update();
+  }
+})();
+
+/* ---- Animated install terminal ----------------------------------------
+ * Types out the real flow — download → connect your agent → it remembers —
+ * into the hero terminal. Starts when scrolled into view, loops, and
+ * respects prefers-reduced-motion (renders the final frame, no typing).
+ */
+(() => {
+  "use strict";
+  const out = document.getElementById("nv-term-out");
+  if (!out) return;
+  const reduce =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // [kind, text] — kind: comment | cmd | cont | ask | ok | arrow | blank
+  const SCRIPT = [
+    ["comment", "# 1 · download — one file, no account, no cloud"],
+    ["cmd", "open NeuroVault_0.5.2_aarch64.dmg"],
+    ["blank", ""],
+    ["comment", "# 2 · connect your agent — one line"],
+    ["cmd", "claude mcp add --scope user neurovault \\"],
+    ["cont", "      neurovault-server -- --mcp-only"],
+    ["ok", "✓ neurovault connected"],
+    ["blank", ""],
+    ["comment", "# 3 · now it remembers — across every session"],
+    ["ask", 'remember "we ship releases from main, never a branch"'],
+    ["ok", "✓ saved to your vault"],
+    ["ask", 'recall "how do we release?"'],
+    ["arrow", "→ You ship from main — never a branch."],
+  ];
+
+  const mk = (cls, text) => {
+    const s = document.createElement("span");
+    if (cls) s.className = cls;
+    s.textContent = text;
+    return s;
+  };
+  const nl = () => document.createTextNode("\n");
+  const promptSym = (k) => (k === "ask" ? "› " : "$ ");
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function renderInstant() {
+    out.textContent = "";
+    for (const [kind, text] of SCRIPT) {
+      if (kind === "blank") { out.appendChild(nl()); continue; }
+      if (kind === "cmd" || kind === "ask") out.appendChild(mk("nv-t-prompt", promptSym(kind)));
+      const cls =
+        kind === "comment" ? "nv-t-comment" :
+        kind === "ok" ? "nv-t-ok" :
+        kind === "arrow" ? "nv-t-arrow" : "nv-t-cmd";
+      out.appendChild(mk(cls, text));
+      out.appendChild(nl());
+    }
+  }
+
+  async function type(node, text, per) {
+    for (let i = 0; i < text.length; i++) {
+      node.textContent += text[i];
+      await sleep(text[i] === " " ? per + 12 : per);
+    }
+  }
+
+  let running = false;
+  async function play() {
+    if (running) return;
+    running = true;
+    out.textContent = "";
+    for (const [kind, text] of SCRIPT) {
+      if (kind === "blank") { out.appendChild(nl()); await sleep(120); continue; }
+      if (kind === "comment") {
+        out.appendChild(mk("nv-t-comment", text));
+      } else if (kind === "cmd" || kind === "ask") {
+        out.appendChild(mk("nv-t-prompt", promptSym(kind)));
+        const node = mk("nv-t-cmd", "");
+        out.appendChild(node);
+        await sleep(180);
+        await type(node, text, 26);
+      } else if (kind === "cont") {
+        const node = mk("nv-t-cmd", "");
+        out.appendChild(node);
+        await type(node, text, 24);
+      } else if (kind === "ok") {
+        await sleep(300);
+        out.appendChild(mk("nv-t-ok", text));
+      } else if (kind === "arrow") {
+        await sleep(320);
+        out.appendChild(mk("nv-t-arrow", text));
+      }
+      out.appendChild(nl());
+      await sleep(kind === "comment" ? 170 : 90);
+    }
+    await sleep(4500);
+    running = false;
+    play(); // loop
+  }
+
+  if (reduce) { renderInstant(); return; }
+  const host = out.closest(".nv-terminal") || out;
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { io.disconnect(); play(); }
+        });
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(host);
+  } else {
+    play();
   }
 })();
