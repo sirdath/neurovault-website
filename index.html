@@ -172,6 +172,17 @@
       <a href="#" class="hero-alt-link is-disabled" title="Linux build not yet published">Linux · coming soon</a>
       <a href="https://github.com/sirdath/NeuroVault#for-developers" class="hero-alt-link">Build from source ↗</a>
     </div>
+    <!-- The #1 install blocker: macOS quarantines unsigned downloads with a
+         scary "damaged" alert. The README explains it; surface it here too,
+         because most people download from this page and never see the README. -->
+    <p class="hero-install-note">
+      macOS says <em>"NeuroVault is damaged"</em>? It's the missing Apple
+      certificate (we're open-source), not malware — drag the app to
+      Applications, then run
+      <code>xattr&nbsp;-dr&nbsp;com.apple.quarantine&nbsp;/Applications/NeuroVault.app</code>
+      once, or right-click → Open.
+      <a href="https://github.com/sirdath/NeuroVault#first-launch--clearing-the-os-warning" target="_blank" rel="noopener">Details ↗</a>
+    </p>
 
     <!-- Metric badges -->
     <div class="hero-stats">

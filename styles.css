@@ -1351,3 +1351,22 @@ code { font-family: var(--mono); font-size: 0.9em;
   border-radius: 5px;
   background: color-mix(in srgb, var(--text) 8%, transparent);
 }
+
+/* ───── First-launch install note (Gatekeeper) ───── */
+.hero-install-note {
+  max-width: 640px;
+  margin: 18px auto 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+.hero-install-note code {
+  font-family: var(--mono);
+  font-size: 0.78em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.hero-install-note a { color: var(--peach); }
