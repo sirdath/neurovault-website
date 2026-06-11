@@ -93,6 +93,7 @@
   </a>
   <nav class="nav-links">
     <a href="#features">Features</a>
+    <a href="#benchmarks">Benchmarks</a>
     <a href="#how">How it works</a>
     <a href="#privacy">Privacy</a>
     <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">GitHub ↗</a>
@@ -187,12 +188,12 @@
     <!-- Metric badges -->
     <div class="hero-stats">
       <div class="stat">
-        <div class="stat-num">3<span class="stat-unit">-way</span></div>
-        <div class="stat-label">hybrid recall<br/>vector + keyword + graph</div>
+        <div class="stat-num">91<span class="stat-unit">%</span></div>
+        <div class="stat-label">hit@5 · LongMemEval<br/>public benchmark, local</div>
       </div>
       <div class="stat">
-        <div class="stat-num">0<span class="stat-unit"> ms</span></div>
-        <div class="stat-label">cloud round-trip<br/>(fully local)</div>
+        <div class="stat-num">118<span class="stat-unit"> ms</span></div>
+        <div class="stat-label">recall over 120k-token<br/>haystacks — zero cloud</div>
       </div>
       <div class="stat">
         <div class="stat-num">23<span class="stat-unit"> MB</span></div>
@@ -267,6 +268,63 @@
       </ul>
     </div>
   </div>
+</section>
+
+<!-- Benchmarks — real numbers, real receipts. The framing rule here:
+     state exactly how every number (ours AND competitors') was produced
+     and let the reader conclude. No accusations needed; the configs
+     speak for themselves. -->
+<section id="benchmarks" class="bench">
+  <div class="section-head reveal">
+    <div class="section-kicker">BENCHMARKED IN THE OPEN</div>
+    <h2 class="section-title">One number. Every receipt.</h2>
+    <p class="section-lede">
+      Memory products love quoting "R@5" — few say how it was measured.
+      Here's ours, and exactly how everyone's was produced. Reproduce ours
+      on your laptop with one command.
+    </p>
+  </div>
+
+  <div class="bench-grid reveal">
+    <div class="bench-card bench-card--us">
+      <div class="bench-score">91<span>%</span></div>
+      <div class="bench-name">NeuroVault</div>
+      <ul>
+        <li>hit@5, LongMemEval (public dataset)</li>
+        <li><strong>Full production pipeline</strong> — the same <code>recall()</code> your agent calls</li>
+        <li><strong>100% local</strong> embeddings · no API keys</li>
+        <li>hit@10: <strong>97%</strong> · stricter recall@5 also published: 0.86</li>
+        <li>118 ms/query · per-question receipts in the repo</li>
+      </ul>
+    </div>
+    <div class="bench-card">
+      <div class="bench-score">95<span>%</span></div>
+      <div class="bench-name">agentmemory</div>
+      <ul>
+        <li>Self-published "R@5" (same metric as our hit@5)</li>
+        <li>Benchmark-only code path — server &amp; pipeline never exercised</li>
+        <li>Embeds only the <strong>first 512 characters</strong> of each document</li>
+        <li>Graph signal off · reranker off in the scored run</li>
+      </ul>
+    </div>
+    <div class="bench-card">
+      <div class="bench-score">98<span>%</span></div>
+      <div class="bench-name">gbrain</div>
+      <ul>
+        <li>Self-published "R@5" (same metric as our hit@5)</li>
+        <li>Embeddings: <strong>OpenAI cloud, 3072-dim</strong> — API key required</li>
+        <li>Their own ablation: vector-only scores 97.4% — the cloud embedder, not the pipeline, does the work</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="bench-foot reveal">
+    All three are session-level any-hit@5 on LongMemEval-S — but they are not
+    measured under the same conditions, so read the bullets, not just the bars.
+    Ours is the only number produced by a shipping product's real code path,
+    fully on-device.
+    <a href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md" target="_blank" rel="noopener">Full methodology, harness &amp; per-question receipts ↗</a>
+  </p>
 </section>
 
 <!-- Features -->
