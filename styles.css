@@ -1434,3 +1434,244 @@ code { font-family: var(--mono); font-size: 0.9em;
   text-align: center;
 }
 .bench-foot a { color: var(--peach); }
+
+/* ============================================================
+   Hero local-first USP — elevate "never leaves your laptop"
+   to a prominent line right under the tagline.
+   ============================================================ */
+.hero-usp {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  max-width: 620px;
+  margin: 16px auto 0;
+  padding: 12px 18px;
+  border: 1px solid var(--border-hot);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--peach) 8%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-align: left;
+  backdrop-filter: blur(8px);
+}
+.hero-usp svg { width: 18px; height: 18px; color: var(--peach); flex-shrink: 0; margin-top: 2px; }
+.hero-usp strong { color: var(--text); }
+.hero-usp em { color: var(--peach-soft); font-style: normal; }
+@media (max-width: 520px) { .hero-usp { border-radius: 16px; } }
+
+/* ============================================================
+   Growth showcase — the dedicated "brain forming" canvas.
+   ============================================================ */
+.grow-show { padding: clamp(48px, 8vw, 100px) clamp(16px, 4vw, 40px) clamp(20px, 4vw, 48px); }
+.grow-stage {
+  position: relative;
+  max-width: 1020px;
+  margin: 8px auto 0;
+  aspect-ratio: 16 / 8;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--peach) 9%, transparent), transparent 68%),
+    var(--bg-deep);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 40px 90px -50px var(--peach-glow);
+}
+.grow-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.grow-stage-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 55%, color-mix(in srgb, var(--bg-deep) 60%, transparent) 100%);
+}
+@media (max-width: 640px) { .grow-stage { aspect-ratio: 4 / 5; } }
+
+/* ============================================================
+   Graphify — the flagship section.
+   ============================================================ */
+.graphify {
+  padding: clamp(56px, 9vw, 116px) 0;
+  border-top: 1px solid var(--border);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(47,123,246,0.07), transparent 70%),
+    var(--bg-deep);
+}
+.gfy-stats {
+  max-width: 760px;
+  margin: 0 auto 30px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 560px) { .gfy-stats { grid-template-columns: repeat(2, 1fr); } }
+.gfy-stat { text-align: center; }
+.gfy-stat strong {
+  display: block;
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--peach);
+  line-height: 1;
+}
+.gfy-stat span { font-size: 0.8rem; color: var(--text-dim); }
+.gfy-tools {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 820px) { .gfy-tools { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .gfy-tools { grid-template-columns: 1fr; } }
+.gfy-tool {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px 18px 20px;
+  transition: border-color .25s ease, transform .25s ease;
+}
+.gfy-tool:hover { transform: translateY(-3px); border-color: var(--border-hot); }
+.gfy-tool code {
+  display: inline-block;
+  margin-bottom: 9px;
+  font-size: 0.9rem;
+  background: color-mix(in srgb, var(--peach) 12%, transparent);
+  color: var(--peach-soft);
+  padding: 3px 9px;
+}
+.gfy-tool--hot {
+  border-color: var(--border-hot);
+  background: color-mix(in srgb, var(--peach) 6%, var(--surface));
+  box-shadow: 0 22px 60px -38px var(--peach-glow);
+}
+.gfy-tool p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); }
+.gfy-langs {
+  max-width: 1000px;
+  margin: 26px auto 0;
+  padding: 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.gfy-langs span {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+/* ============================================================
+   MCP tiers
+   ============================================================ */
+.mcp { padding: clamp(48px, 7vh, 80px) 0; }
+.tier-grid {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 820px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .tier-grid { grid-template-columns: 1fr; } }
+.tier {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 18px 18px 16px;
+  position: relative;
+}
+.tier--default {
+  border-color: var(--border-hot);
+  background: color-mix(in srgb, var(--peach) 6%, var(--surface));
+  box-shadow: 0 22px 60px -38px var(--peach-glow);
+}
+.tier-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.tier-head h3 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.tier-n {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--peach);
+  line-height: 1;
+}
+.tier p { margin: 0 0 14px; font-size: 0.86rem; line-height: 1.55; color: var(--text-muted); }
+.tier p code { font-size: 0.82em; }
+.tier-tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.tier--default .tier-tag { color: var(--peach); border-color: var(--border-hot); }
+
+/* ============================================================
+   For teams — roadmap teaser
+   ============================================================ */
+.teams {
+  padding: clamp(56px, 9vw, 116px) clamp(16px, 4vw, 40px);
+  border-top: 1px solid var(--border);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(47,123,246,0.08), transparent 70%),
+    var(--bg-deep);
+}
+.teams-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+.teams-lede {
+  max-width: 600px;
+  margin: 16px auto 28px;
+  color: var(--text-muted);
+  font-size: 1.04rem;
+  line-height: 1.65;
+}
+.teams-points {
+  list-style: none;
+  margin: 0 auto 30px;
+  padding: 0;
+  max-width: 560px;
+  display: grid;
+  gap: 15px;
+  text-align: left;
+}
+.teams-points li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 13px;
+  align-items: start;
+  font-size: 0.96rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.teams-points strong { color: var(--text); }
+.teams-points .privacy-dot { margin-top: 7px; }
+.teams-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hot);
+  background: color-mix(in srgb, var(--peach) 10%, transparent);
+  color: var(--peach-soft);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform .18s ease, background .2s ease;
+}
+.teams-cta:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--peach) 16%, transparent); }
+.teams-cta svg { width: 16px; height: 16px; }
+
+/* Reduced motion: the showcase canvas renders a static grown graph
+   (handled in nv-grow.js); nothing further to disable here. */
