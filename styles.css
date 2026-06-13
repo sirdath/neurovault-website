@@ -1435,6 +1435,58 @@ code { font-family: var(--mono); font-size: 0.9em;
 }
 .bench-foot a { color: var(--peach); }
 
+/* Single-focus metric row (our numbers, no competitor cards) */
+.bench-metrics {
+  max-width: 1000px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 760px) { .bench-metrics { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .bench-metrics { grid-template-columns: 1fr; } }
+.bmetric {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  padding: 28px 22px;
+  text-align: center;
+}
+.bmetric--hot {
+  border-color: var(--border-hot);
+  background: color-mix(in srgb, var(--peach) 7%, var(--surface));
+  box-shadow: 0 22px 60px -34px var(--peach-glow);
+}
+.bmetric-num {
+  font-family: var(--mono);
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.bmetric-num span { font-size: 1.2rem; color: var(--text-dim); }
+.bmetric--hot .bmetric-num { color: var(--peach); }
+.bmetric-label {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.bmetric-label em {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+}
+
 /* ============================================================
    Hero local-first USP — elevate "never leaves your laptop"
    to a prominent line right under the tagline.
