@@ -309,13 +309,14 @@ On session start, Claude Code spawns the server. It calls `/api/health` to check
 
 ### The tool surface (the agent's contract)
 
-The server exposes **~46 tools** via a data-driven registry, gated by a **tier** so an agent only loads the slice it needs: `minimal` (3) · `lite` (8, the default) · `standard` (18) · `full` (46). Set it with `NEUROVAULT_MCP_TIER`, `~/.neurovault/mcp_tier.txt`, or Settings → MCP — fewer tools means less tool-definition context the agent pays for up front. Every tool takes an optional `brain` parameter. A representative slice:
+The server exposes **54 tools** via a data-driven registry, gated by a **tier** so an agent only loads the slice it needs: `minimal` (3) · `lite` (8, the default) · `standard` (20) · `full` (54). Set it with `NEUROVAULT_MCP_TIER`, `~/.neurovault/mcp_tier.txt`, or Settings → MCP — fewer tools means less tool-definition context the agent pays for up front. Every tool takes an optional `brain` parameter. A representative slice:
 
 **Read-only (auto-approvable):**
 - `recall(query, mode, limit, brain, include_observations, rerank, spread_hops, as_of)` — hybrid search. Primary tool. Supports search operators inside `query`: `kind:`, `folder:`, `after:`, `before:`, `entity:`, `state:`, `agent:`.
 - `related(engram_id, hops, limit, min_similarity, link_types, include_observations, brain)` — direct 1-or-2-hop neighbour lookup. ~50× cheaper than a follow-up recall.
 - `recall_chunks(query, limit, brain)` — passage-level retrieval when the matching note is huge.
-- `session_start(brain)` — bootstrap pack: active brain + recent activity + core memory blocks.
+- `session_start(brain, agent?)` — bootstrap pack: active brain + recent activity + core memory blocks. Pass `agent=X` to scope it to X's own recent engrams + X's inbox instead of the brain-wide view.
+- `agent_inbox(agent)` — read the open handoffs addressed to an agent (by id or `agent_match` regex; broadcasts included).
 - `list_brains()` — registry dump.
 - `check_duplicate(content, threshold, brain)` — "would this be a dup if I saved it?" (prefer `remember(deduplicate=...)` for actual writes).
 - `core_memory_read(label, brain)` — read typed persona/project/user blocks.
@@ -324,6 +325,7 @@ The server exposes **~46 tools** via a data-driven registry, gated by a **tier**
 - `remember(content, title, brain, agent_id, folder, deduplicate)` — save a fact. Always pass `deduplicate=0.92` to avoid clutter.
 - `switch_brain(brain_id)` — rotate active brain.
 - `create_brain(name, description, vault_path)` — new vault.
+- `handoff(to_agent, type, payload?, …)` — route a directed, inert message to another agent through the shared brain. Pull-based; nothing auto-runs. This plus `agent_inbox` gives **multi-agent coordination — agents hand off work and read their own inbox through one shared, local, zero-LLM brain.** A coordination substrate, not an orchestrator: NeuroVault never runs or schedules agents.
 - `core_memory_set/append/replace(label, ...)` — Letta-style block edits.
 
 ### The agent-efficiency layer
