@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0b0b12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Apply stored theme before paint (prevents flash) -->
 <script>
@@ -409,9 +409,9 @@ html[data-theme="light"] h2.sec-title .grad{color:#1f5fd4}
   background:var(--primary);animation:livePulse 2.6s ease-out infinite}
 @keyframes livePulse{0%{transform:scale(1);opacity:.7}70%{transform:scale(3.6);opacity:0}100%{opacity:0}}
 h1{
-  font-family:var(--sans);font-weight:800;
-  font-size:clamp(2.6rem,6.7vw,4.7rem);
-  line-height:1.0;letter-spacing:-.04em;margin-bottom:24px;
+  font-family:var(--mono);font-weight:700;
+  font-size:clamp(2.05rem,5.2vw,3.85rem);
+  line-height:1.07;letter-spacing:-.025em;margin-bottom:24px;
   text-wrap:balance;
 }
 /* editorial depth: in dark the headline gets a faint downward shadow so it
@@ -820,7 +820,7 @@ html[data-theme="light"] .hp-num{color:#1f5fd4}
 .hf-node rect{fill:var(--surface-2);stroke:var(--line-strong)}
 .hf-brain rect{fill:url(#hfBrainGrad);stroke:var(--primary)}
 .hf-label{font-family:var(--mono);font-size:14px;fill:var(--text)}
-.hf-sub{font-family:var(--mono);font-size:13px;fill:var(--faint)}
+.hf-sub{font-family:var(--mono);font-size:11px;fill:var(--faint)}
 .hf-edge{stroke:var(--link-hot);stroke-width:1.5;fill:none}
 .hf-packet{fill:var(--pulse)}
 @media(max-width:880px){
@@ -1259,10 +1259,6 @@ html[data-theme="light"] .brand:hover .brand-word{filter:saturate(1.12) brightne
       </div>
     </div>
   </div>
-  <div class="scroll-cue" aria-hidden="true">
-    <span class="mouse"></span>
-    <span>scroll</span>
-  </div>
   </section>
 
   <!-- transparent scroll distance: as it passes, the SAME sticky #brain canvas
@@ -1432,7 +1428,7 @@ html[data-theme="light"] .brand:hover .brand-word{filter:saturate(1.12) brightne
 
         <!-- shared brain (center) -->
         <g class="hf-brain">
-          <rect x="186" y="120" width="88" height="60" rx="13"/>
+          <rect x="176" y="120" width="108" height="60" rx="13"/>
         </g>
         <text class="hf-label" x="230" y="146" text-anchor="middle">shared brain</text>
         <text class="hf-sub" x="230" y="162" text-anchor="middle">127.0.0.1:8765</text>
@@ -1717,7 +1713,7 @@ html[data-theme="light"] .brand:hover .brand-word{filter:saturate(1.12) brightne
     /* form 0->1 is the one-time fly-in + lock; locked latches the recall
        pulse + terminal handshake exactly once. */
     var form=REDUCE?1:0, locked=REDUCE, formStart=0, t0=performance.now(), rafId=null;
-    var FORM_MS=1500;
+    var FORM_MS=800;
     /* morph 0 -> assembled logo, 1 -> sprawling constellation. Scroll-scrubbed
        by the .morph-spacer below the hero. morphVis fades the morph contribution
        in/out so the graph never bleeds over the Problem section. The SAME nodes
