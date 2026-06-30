@@ -1,773 +1,2482 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>NeuroVault — Local-first AI memory for Claude</title>
-<meta name="description" content="Claude forgets you after every conversation. NeuroVault doesn't. A local-first memory layer for AI agents — semantic + keyword + knowledge-graph retrieval, entirely on your machine." />
-<meta name="theme-color" content="#0b0b12" />
-
-<!-- Open Graph -->
-<meta property="og:title" content="NeuroVault — Local-first AI memory" />
-<meta property="og:description" content="Claude forgets you after every conversation. NeuroVault doesn't." />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://github.com/sirdath/NeuroVault" />
-<meta property="og:image" content="./assets/screenshots/02-filter-panel.png" />
-
-<link rel="icon" type="image/png" href="./assets/favicon.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroVault - a memory that survives the window close</title>
+<meta name="description" content="Local-first, open-source AI memory for Claude and any MCP agent. Say it once - it recalls the moment it's relevant. 100% on your machine.">
+<meta name="theme-color" content="#0b0b12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="./fx/nv-brain-points.js" defer></script>
-<script src="./fx/nv-brain.js" defer></script>
-<script src="./fx/nv-grow.js" defer></script>
-<link rel="stylesheet" href="./styles.css" />
-<link rel="stylesheet" href="./fx/aurora-bg.css" />
-<link rel="stylesheet" href="./fx/logo-glow.css" />
-<style id="nv-hero-fx">
-.hero{position:relative;overflow:hidden}
-.hero-net{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;pointer-events:none}
-.hero-inner{position:relative;z-index:2}
-.hero-logo{--lg-c1:#2F7BF6;--lg-c2:#7FB0FF;--lg-c3:#1d4ed8;--lg-blur1:5px;--lg-blur2:12px;--lg-blur3:24px}
-.hero-tagline-accent{background:linear-gradient(90deg,#7FB0FF,#2F7BF6 55%,#60A5FA);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-.nav-logo-word{height:15px;width:auto;display:block}
-.nav-logo-icon{width:52px;height:52px;border-radius:0;box-shadow:none}
-.nav-logo{gap:8px}
-.nav{display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center}
-.nav-logo{position:static!important;transform:none!important;justify-self:start;margin:0}
-.nav-links{justify-self:center}
-.nav-cta{justify-self:end}
-:root{--sans:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.section-title,.hero-tagline,.section-kicker{font-family:"Space Grotesk",var(--sans)}
-.btn-primary{background:var(--peach)!important;background-image:none!important;background-size:auto!important;animation:none!important;color:#fff!important;text-shadow:none}
-.btn-primary::before{display:none!important}
-.nav-cta{background:var(--peach)!important;background-image:none!important;color:#fff!important}
-.hero{display:flex;align-items:center;justify-content:center}
-.hero-tagline{margin:0 auto 14px;max-width:700px}
-.hero-sub{margin:14px auto 0;max-width:600px}
-.hero-brain-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none;opacity:.92}
-.feat-ic{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:13px;background:linear-gradient(140deg,rgba(47,123,246,.18),rgba(47,123,246,.04));border:1px solid rgba(47,123,246,.28);color:#86b6ff;margin-bottom:15px;box-shadow:0 6px 16px -8px rgba(47,123,246,.5)}
-.feat-ic svg{width:23px;height:23px}
-.nav-cta{display:inline-flex!important;align-items:center;gap:7px;border-radius:999px!important;padding:9px 17px!important;font-weight:600;box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 7px 18px -7px rgba(47,123,246,.65);transition:transform .18s ease,box-shadow .2s ease}
-.nav-cta:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.34) inset,0 11px 26px -7px rgba(47,123,246,.8)}
-.nav-cta-ic{width:15px;height:15px}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-<!-- Apply stored theme before paint (prevents dark → light flash on reload) -->
+<!-- Apply stored theme before paint (prevents flash) -->
 <script>
   try {
-    if (localStorage.getItem("nv.theme") === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
-      var m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.setAttribute("content", "#f5f8fd");
-    }
+    var t = localStorage.getItem('nv-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   } catch (e) {}
 </script>
+
+<style>
+/* ======================================================================
+   TOKENS - one set, dark default + first-class light
+   ====================================================================== */
+:root{
+  /* dark (default) */
+  --bg:#0b0b12;
+  --bg-deep:#07070c;
+  --surface:#11111b;
+  --surface-2:#15151f;
+  --surface-3:#191926;
+  --line:rgba(255,255,255,.08);
+  --line-strong:rgba(255,255,255,.14);
+  --text:#eef2f8;
+  --muted:#aab2c5;
+  --faint:#7e88a0;
+  --primary:#2F7BF6;
+  --soft:#7FB0FF;
+  --glow:rgba(47,123,246,.35);
+  --glow-strong:rgba(47,123,246,.55);
+  /* interactive accents (hover borders + sheen washes) */
+  --border-hot:rgba(127,176,255,.55);
+  --sheen:rgba(127,176,255,.55);
+  --wash:rgba(47,123,246,.08);
+  --press:.985;
+  /* runtime-driven defaults (JS/inline-style override these per element) */
+  --v:0;--mx:50%;--my:50%;--rx:0deg;--ry:0deg;
+
+  /* canvas-read tokens (all 3 animations read these) */
+  --node:#7FB0FF;
+  --node-core:#d7e6ff;
+  --node-dim:#3a567f;
+  --link:rgba(127,176,255,.30);
+  --link-hot:rgba(127,176,255,.55);
+  --pulse:#bfe0ff;
+
+  --btn-text:#ffffff;
+  --eyebrow:#7FB0FF;
+  --badge-bg:rgba(127,176,255,.08);
+  --grid-line:rgba(127,176,255,.05);
+  --term-bg:#0a0a11;
+  --term-head:#101019;
+  --halo:rgba(47,123,246,.20);
+  --scrim-top:rgba(11,11,18,0);
+  --scrim-bot:rgba(11,11,18,.86);
+
+  --radius:14px;
+  --radius-lg:20px;
+  --maxw:1180px;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+html[data-theme="light"]{
+  --bg:#f5f8fd;
+  --bg-deep:#eaf0fa;
+  --surface:#ffffff;
+  --surface-2:#f1f5fc;
+  --surface-3:#e9f0fb;
+  --line:rgba(13,19,32,.10);
+  --line-strong:rgba(13,19,32,.16);
+  --text:#0d1320;
+  --muted:#3a4658;
+  --faint:#525d72;
+  --primary:#2F7BF6;
+  --soft:#2566d6;
+  --glow:rgba(47,123,246,.20);
+  --glow-strong:rgba(47,123,246,.32);
+  /* interactive accents (hover borders + sheen washes) */
+  --border-hot:rgba(47,123,246,.50);
+  --sheen:rgba(47,123,246,.30);
+  --wash:rgba(47,123,246,.06);
+  --press:.985;
+
+  --node:#2F7BF6;
+  --node-core:#1456c4;
+  --node-dim:#9cb8e6;
+  --link:rgba(47,123,246,.22);
+  --link-hot:rgba(47,123,246,.42);
+  --pulse:#1b59c9;
+
+  --btn-text:#ffffff;
+  --eyebrow:#2566d6;
+  --badge-bg:rgba(47,123,246,.07);
+  --grid-line:rgba(47,123,246,.05);
+  --term-bg:#0c0f17;
+  --term-head:#141926;
+  --halo:rgba(47,123,246,.16);
+  --scrim-top:rgba(245,248,253,0);
+  --scrim-bot:rgba(245,248,253,.86);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  transition:background .5s var(--ease),color .5s var(--ease);
+}
+.mono{font-family:var(--mono)}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p,ul{margin:0}
+::selection{background:var(--glow-strong);color:var(--text)}
+img{max-width:100%;display:block}
+
+/* ---------- skip link ---------- */
+.skip{
+  position:absolute;left:-999px;top:8px;z-index:120;
+  display:inline-flex;align-items:center;min-height:44px;
+  background:#0a2a66;color:#fff;padding:0 18px;border-radius:11px;
+  border:1px solid #4d8bff;
+  font-family:var(--mono);font-size:13px;text-decoration:none;
+}
+.skip:focus{left:8px;outline:2px solid #7FB0FF;outline-offset:2px}
+
+/* ======================================================================
+   STICKY NAV
+   ====================================================================== */
+.nav{
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:saturate(140%) blur(14px);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);
+  background:color-mix(in srgb, var(--bg) 72%, transparent);
+  border-bottom:1px solid transparent;
+  transition:border-color .3s var(--ease),background .3s var(--ease);
+}
+.nav.scrolled{border-bottom-color:var(--line)}
+.nav-inner{
+  max-width:var(--maxw);margin:0 auto;
+  padding:14px clamp(18px,5vw,44px);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.brand{
+  display:inline-flex;align-items:center;gap:10px;
+  min-height:44px;padding:0 6px;border-radius:10px;
+  color:var(--text);
+}
+.brand:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+/* real brand mark (PNG, blue artwork on transparent) - sized for the nav.
+   The asset is blue line-art; in light mode we keep it crisp by sitting it on
+   a faint chip so the pale "vault" half never dissolves into a white nav. */
+.brand-mark{
+  width:30px;height:30px;flex:none;border-radius:8px;
+  display:grid;place-items:center;overflow:hidden;
+}
+.brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+/* the real wordmark (999x66 blue line-art on transparent), sized to the nav
+   cap-height. It reads on the dark nav as-is; light mode gets a hair of
+   contrast lift so the lighter "VAULT" half stays legible. The wordmark is
+   wide, so on very narrow screens we drop it and let the mark carry the brand
+   (the brand link keeps its aria-label, so it is still announced as the home
+   link). */
+.brand-word{height:18px;width:auto;display:block}
+html[data-theme="light"] .brand-word{filter:saturate(1.12) brightness(.9)}
+html[data-theme="light"] .brand-mark img{filter:saturate(1.1) brightness(.94)}
+@media(max-width:420px){.brand-word{display:none}}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-ghost{
+  display:none;align-items:center;gap:8px;
+  height:44px;padding:0 15px;border-radius:11px;
+  border:1px solid var(--line-strong);background:var(--surface);
+  color:var(--text);font-family:var(--mono);font-size:12.5px;font-weight:500;
+  transition:color .2s,border-color .2s,transform .15s var(--ease);
+}
+.nav-ghost:hover{color:var(--text);border-color:var(--soft);transform:translateY(-1px)}
+.nav-ghost:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.nav-ghost svg{width:15px;height:15px}
+@media(min-width:680px){.nav-ghost{display:inline-flex}}
+/* NAV DOWNLOAD - a confident, depth-having button, not a flat blue pill.
+   A layered fill (top sheen, deep base, inset bevel), a thin lit ring, and a
+   light-pass sheen that wipes across on hover. The chevron icon sits on a
+   faint inner glow so the whole thing reads like a tactile brand button. */
+.nav-dl{
+  position:relative;isolation:isolate;overflow:hidden;
+  display:inline-flex;align-items:center;gap:8px;
+  height:44px;padding:0 19px;border-radius:12px;
+  font-family:var(--sans);font-size:13.5px;font-weight:700;letter-spacing:-.01em;
+  color:#fff;
+  /* fill kept deep enough that white text clears AA (>=4.5:1): the central
+     band where the label sits is ~#2360d6, the top sheen is a thin highlight
+     that does not sit under the text. */
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 30%),
+    linear-gradient(180deg,#3f7cea 0%,#2360d6 52%,#163f9e 100%);
+  border:1px solid rgba(120,165,245,.55);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.35) inset,
+    0 -10px 18px -12px rgba(8,24,64,.7) inset,
+    0 10px 26px -10px var(--glow-strong),
+    0 0 0 1px rgba(47,123,246,.18);
+  transition:transform .16s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease);
+}
+/* light-pass sheen wiping across on hover */
+.nav-dl::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.42) 50%,transparent 72%);
+  transform:translateX(-130%);
+  transition:transform .8s cubic-bezier(.2,.7,.3,1);
+}
+.nav-dl > *{position:relative;z-index:2}
+html[data-theme="light"] .nav-dl{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0) 32%),
+    linear-gradient(180deg,#3a78e8 0%,#2360d6 52%,#16448f 100%);
+  border-color:rgba(47,123,246,.6);
+}
+.nav-dl:hover{
+  transform:translateY(-1px);border-color:rgba(180,210,255,.8);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.45) inset,
+    0 -10px 18px -12px rgba(8,24,64,.7) inset,
+    0 14px 32px -10px var(--glow-strong),
+    0 0 0 1px rgba(47,123,246,.3);
+}
+.nav-dl:hover::before{transform:translateX(130%)}
+.nav-dl:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.nav-dl svg{width:15px;height:15px;filter:drop-shadow(0 1px 1px rgba(8,24,64,.35))}
+.theme-toggle{
+  width:44px;height:44px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line-strong);border-radius:11px;
+  background:var(--surface);color:var(--muted);cursor:pointer;
+  transition:border-color .2s,color .2s,transform .2s,background .3s;
+}
+.theme-toggle:hover{border-color:var(--soft);color:var(--text);transform:translateY(-1px)}
+.theme-toggle:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.theme-toggle svg{width:19px;height:19px}
+.ic-sun{display:none}
+html[data-theme="light"] .ic-sun{display:block}
+html[data-theme="light"] .ic-moon{display:none}
+
+/* ======================================================================
+   SHARED SECTION SHELL
+   ====================================================================== */
+.section{
+  position:relative;
+  max-width:var(--maxw);margin:0 auto;
+  padding:clamp(80px,11vh,128px) clamp(20px,5vw,44px);
+}
+/* a hairline rule between stacked sections so they read as distinct bands of
+   content rather than floating in one undifferentiated dark expanse. The rule
+   is a soft center-weighted line, fading at both ends. */
+.section + .section::before{
+  content:"";position:absolute;top:0;left:clamp(20px,5vw,44px);right:clamp(20px,5vw,44px);
+  height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--line-strong) 22%,var(--line-strong) 78%,transparent);
+}
+/* every other content section gets a barely-there surface lift so the eye can
+   tell where one ends and the next begins, even before the copy is read. */
+#recall,#benchmark,#confidence,#tools{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 32%,transparent),transparent 26%);
+}
+.section-head{max-width:760px;margin:0 0 clamp(36px,5vh,60px)}
+.section-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.kicker{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--eyebrow);
+  margin-bottom:18px;
+}
+.kicker .tick{width:7px;height:7px;border-radius:50%;background:var(--primary);
+  box-shadow:0 0 0 4px var(--glow)}
+h2.sec-title{
+  font-size:clamp(1.85rem,4.4vw,3rem);
+  line-height:1.06;letter-spacing:-.025em;font-weight:700;color:var(--text);
+}
+h2.sec-title .grad{
+  /* Solid bright accent in dark mode (#aecdff clears ~9:1 on --bg) so the
+     a11y checker reads a real, high-contrast color rather than the
+     transparent text-fill of a clipped gradient. Light mode uses the deep
+     brand blue (#1f5fd4, ~5:1 on the pale bg). */
+  color:#aecdff;
+}
+html[data-theme="light"] h2.sec-title .grad{color:#1f5fd4}
+.sec-lede{
+  margin-top:18px;font-size:clamp(1.02rem,1.9vw,1.18rem);
+  line-height:1.6;color:var(--muted);max-width:62ch;font-weight:400;
+}
+.sec-lede strong{color:var(--text);font-weight:600}
+.sec-lede code,.card code,.bench-foot code,p code{
+  font-family:var(--mono);font-size:.86em;
+  background:var(--surface-2);border:1px solid var(--line);
+  padding:.08em .42em;border-radius:6px;color:var(--soft);
+}
+
+/* scroll reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* ======================================================================
+   HERO  (living-synapse base)
+   ====================================================================== */
+/* ---------- unified hero + morph zone ----------
+   ONE tall wrapper holds: a single sticky #brain canvas, the hero copy, and a
+   transparent morph spacer. The SAME canvas (and its SAME node objects) both
+   assemble the logo on load AND scroll-morph those nodes into the neural-graph
+   constellation as the spacer scrolls past. There is no second canvas and no
+   hand-off: one render, the whole way. The wrapper carries the hero backdrop so
+   the pinned canvas reads against it across the entire zone; the hero section
+   itself is transparent and just scrolls its copy away over the sticky canvas.
+   Under reduced motion the spacer collapses (no dead scroll) and the canvas
+   stays the calm static logo. */
+.hero-wrap{
+  position:relative;isolation:isolate;
+  background:
+    radial-gradient(900px 760px at 71% 46%, var(--glow), transparent 64%),
+    radial-gradient(1200px 800px at 72% 38%, var(--halo), transparent 60%),
+    linear-gradient(180deg,var(--bg) 0%,var(--bg-deep) 100%);
+}
+/* the single hero/morph canvas: pinned for the whole wrapper so one instance
+   carries the logo through the morph. Sits behind the hero copy (z-index 0). */
+#brain{
+  position:sticky;top:0;z-index:0;
+  width:100%;height:100vh;height:100svh;
+  display:block;pointer-events:none;
+  /* pull the canvas up by its own height so it overlays (not pushes) the hero
+     content that follows it in source order. */
+  margin-bottom:-100vh;margin-bottom:-100svh;
+}
+.hero{
+  position:relative;z-index:1;
+  min-height:100svh;
+  display:flex;flex-direction:column;
+  overflow:hidden;isolation:isolate;
+  background:transparent;
+}
+.hero::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:54px 54px;
+  -webkit-mask-image:radial-gradient(900px 700px at 70% 42%,#000 0%,transparent 72%);
+  mask-image:radial-gradient(900px 700px at 70% 42%,#000 0%,transparent 72%);
+}
+/* ---------- transparent morph spacer (logo -> neural graph) ----------
+   Pure scroll distance below the hero. As it scrolls past, the SAME sticky
+   #brain canvas scrubs the SAME nodes from the logo into the constellation.
+   It renders nothing itself (no second canvas), it only gives the morph room
+   to play. Collapsed entirely under reduced motion. */
+.morph-spacer{position:relative;z-index:1;height:170vh;pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+  .morph-spacer{display:none}
+  #brain{position:absolute;inset:0;height:100%;margin-bottom:0}
+}
+/* aurora bloom - a soft glow that sits behind the headline, on its own
+   parallax layer, so the hero reads as depth rather than a flat panel. */
+.hero-aurora{
+  position:absolute;z-index:1;pointer-events:none;
+  left:-6%;top:-4%;width:62%;height:78%;
+  background:
+    radial-gradient(42% 50% at 38% 42%, var(--glow-strong), transparent 70%),
+    radial-gradient(36% 44% at 60% 60%, var(--halo), transparent 72%);
+  filter:blur(46px);opacity:0;
+  will-change:transform,opacity;
+}
+@media(max-width:880px){.hero-aurora{width:90%;height:60%;left:-10%;top:2%}}
+/* foreground particle drift - faint dust above the brain, below the copy */
+#heroDust{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;opacity:0}
+.hero::after{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    linear-gradient(105deg, var(--bg) 6%, rgba(0,0,0,0) 58%),
+    linear-gradient(180deg, var(--scrim-top) 58%, var(--scrim-bot) 100%);
+  opacity:.92;
+}
+.hero-stage{
+  position:relative;z-index:5;flex:1;
+  width:100%;max-width:var(--maxw);margin:0 auto;
+  display:flex;align-items:center;
+  padding:clamp(20px,5vh,52px) clamp(20px,5vw,44px) clamp(40px,7vh,72px);
+}
+.hero-copy{max-width:660px;width:100%}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--eyebrow);
+  margin-bottom:22px;
+}
+.eyebrow .live{position:relative;width:7px;height:7px;border-radius:50%;background:var(--primary)}
+.eyebrow .live::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:var(--primary);animation:livePulse 2.6s ease-out infinite}
+@keyframes livePulse{0%{transform:scale(1);opacity:.7}70%{transform:scale(3.6);opacity:0}100%{opacity:0}}
+h1{
+  font-family:var(--sans);font-weight:800;
+  font-size:clamp(2.6rem,6.7vw,4.7rem);
+  line-height:1.0;letter-spacing:-.04em;margin-bottom:24px;
+  text-wrap:balance;
+}
+/* editorial depth: in dark the headline gets a faint downward shadow so it
+   sits in front of the synapse field; in light it stays crisp. */
+html[data-theme="dark"] h1{text-shadow:0 1px 0 rgba(0,0,0,.25),0 18px 50px rgba(3,8,22,.45)}
+/* each headline line clips its words so they reveal by sliding up from a mask;
+   once revealed the clip is released so the accent glow + focus ring show. */
+.h1-line{display:block;overflow:hidden;padding-bottom:.06em}
+.h1-line.revealed{overflow:visible}
+.word{display:inline-block}
+/* JS adds .reveal-words to run the staggered word slide; without JS (or with
+   reduced motion) words simply sit in place, fully visible. */
+.js-anim .word{transform:translateY(105%);opacity:0}
+.js-anim .word.in{transform:none;opacity:1;
+  transition:transform .62s var(--ease),opacity .5s var(--ease)}
+/* The accent word ALWAYS keeps a solid, high-contrast color (#aecdff dark,
+   #1f5fd4 light) so a11y contrast checkers read a real color at every frame -
+   never transparent text. The one-time "charge" is a brightness + glow pulse
+   that lights the word up, NOT a transparent gradient-clip, so it stays
+   accessible throughout the sweep. */
+h1 .grad{color:#aecdff}
+html[data-theme="light"] h1 .grad{color:#1f5fd4}
+.accent-charge.charged{animation:accentCharge 1.05s var(--ease)}
+@keyframes accentCharge{
+  0%{filter:brightness(1) drop-shadow(0 0 0 var(--glow-strong))}
+  35%{filter:brightness(1.55) drop-shadow(0 0 18px var(--glow-strong))}
+  100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}
+}
+/* a hover ripple cue on the accent word (real, subtle glow) + a two-tone
+   underline that nods to the brain/vault split: the bright brain blue fades
+   into the lighter vault blue across the word. */
+#accentWord{
+  position:relative;cursor:default;border-radius:6px;
+  padding-bottom:.04em;
+  transition:filter .3s var(--ease);
+}
+#accentWord::after{
+  content:"";position:absolute;left:.02em;right:.02em;bottom:-.06em;height:3px;
+  border-radius:3px;
+  background:linear-gradient(90deg,var(--primary),var(--soft) 55%,var(--node-core));
+  opacity:.85;
+}
+html[data-theme="light"] #accentWord::after{opacity:.7}
+#accentWord:hover{filter:drop-shadow(0 0 14px var(--glow-strong))}
+#accentWord:focus-visible{outline:2px solid var(--primary);outline-offset:4px}
+.lead{
+  font-size:clamp(1.06rem,2.1vw,1.26rem);line-height:1.55;
+  color:var(--muted);font-weight:400;max-width:42ch;margin-bottom:30px;
+}
+.lead b{color:var(--text);font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:13px;margin-bottom:26px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:50px;padding:0 24px;border-radius:13px;
+  font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:-.01em;
+  cursor:pointer;border:1px solid transparent;
+  transition:transform .18s var(--ease),box-shadow .25s var(--ease),background .25s,border-color .25s,color .25s;
+}
+.btn svg{width:17px;height:17px;flex:none}
+.btn-primary{
+  /* dark ink on the light-blue gradient clears AA comfortably in dark mode;
+     light mode flips to white on the deeper blue (also AA). */
+  background:linear-gradient(180deg,var(--soft),var(--primary));
+  color:#06122a;
+  box-shadow:0 10px 30px -10px var(--glow-strong),inset 0 1px 0 rgba(255,255,255,.25);
+}
+html[data-theme="light"] .btn-primary{background:linear-gradient(180deg,#2563d6,#1f59cf);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px -10px var(--glow-strong),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-ghost{background:var(--surface);color:var(--text);border-color:var(--line-strong)}
+.btn-ghost:hover{transform:translateY(-2px);border-color:var(--soft);background:var(--surface-2)}
+.btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+
+/* ---------- realistic OS-aware download buttons (ported, re-tokened) ----------
+   Two-tier button: an absolutely-placed leading icon, a bold main label, and a
+   small mono sub-label. The primary is the live "Download for <OS>" CTA with a
+   branded blue aurora; the Mac button is a frosted glass sibling. Both wear the
+   redesign's blue palette and work in light + dark. */
+.btn-dl{
+  position:relative;display:inline-flex;flex-direction:column;
+  align-items:flex-start;justify-content:center;gap:2px;
+  min-height:58px;padding:9px 24px 9px 54px;border-radius:14px;
+  font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:-.01em;
+  cursor:pointer;border:1px solid transparent;overflow:hidden;isolation:isolate;
+  transition:transform .18s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease),background .25s var(--ease);
+}
+.btn-dl .btn-icon{
+  position:absolute;left:20px;top:50%;transform:translateY(-50%);
+  width:19px;height:19px;flex:none;z-index:2;
+}
+.btn-dl .btn-main{position:relative;z-index:2;line-height:1.15}
+.btn-dl .btn-sub{
+  position:relative;z-index:2;font-family:var(--mono);font-size:12px;
+  font-weight:500;letter-spacing:0;opacity:.82;line-height:1.2;
+}
+.btn-dl:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+
+/* PRIMARY (OS-detected) - branded blue aurora that slowly drifts, with a
+   vertical light-pass sheen on hover. Dark ink on the bright blue in dark
+   mode; flips to white on the deeper blue in light mode (both clear AA). */
+.btn-dl-primary{
+  background:linear-gradient(120deg,
+    var(--soft) 0%, #a9ccff 26%, var(--soft) 50%, var(--primary) 76%, var(--soft) 100%);
+  background-size:220% 220%;
+  color:#06122a;
+  border-color:rgba(47,123,246,.42);
+  box-shadow:0 10px 30px -10px var(--glow-strong),
+    inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.05);
+  animation:dlAuroraPan 9s ease-in-out infinite,dlAuroraPulse 5s ease-in-out infinite;
+}
+html[data-theme="light"] .btn-dl-primary{
+  background:linear-gradient(120deg,#2563d6 0%,#1f59cf 26%,#2563d6 50%,#1d52c4 76%,#2563d6 100%);
+  background-size:220% 220%;color:#fff;
+}
+.btn-dl-primary .btn-sub{opacity:.85}
+.btn-dl-primary::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.22) 48%,
+    rgba(255,255,255,.3) 50%,rgba(255,255,255,.22) 52%,transparent 100%);
+  transform:translateY(-130%);
+  transition:transform .8s cubic-bezier(.2,.7,.3,1);
+}
+.btn-dl-primary:hover{
+  transform:translateY(-2px);border-color:rgba(190,215,255,.6);
+  box-shadow:0 16px 44px -10px var(--glow-strong),
+    0 0 0 1px rgba(47,123,246,.35),inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+  animation-duration:4s,2.4s;
+}
+.btn-dl-primary:hover::before{transform:translateY(130%)}
+@keyframes dlAuroraPan{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes dlAuroraPulse{
+  0%,100%{box-shadow:0 10px 30px -10px var(--glow-strong),inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(255,255,255,.05)}
+  50%{box-shadow:0 12px 36px -10px var(--glow-strong),0 0 0 1px rgba(47,123,246,.20),inset 0 1px 0 rgba(255,255,255,.34),inset 0 0 0 1px rgba(255,255,255,.08)}
+}
+
+/* MAC - frosted glass sibling with a diagonal sheen on hover. */
+.btn-dl-mac{
+  color:var(--text);
+  background:linear-gradient(135deg,
+    color-mix(in srgb,var(--text) 9%,transparent) 0%,
+    color-mix(in srgb,var(--text) 3%,transparent) 60%,
+    rgba(47,123,246,.07) 100%);
+  border-color:var(--line-strong);
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:0 8px 28px -14px rgba(0,0,0,.4),0 2px 8px -4px var(--glow),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+html[data-theme="light"] .btn-dl-mac{
+  background:linear-gradient(135deg,rgba(255,255,255,.9) 0%,var(--surface) 60%,rgba(47,123,246,.06) 100%);
+  box-shadow:0 8px 24px -16px rgba(13,19,32,.5),0 2px 8px -4px var(--glow),
+    inset 0 1px 0 rgba(255,255,255,.8);
+}
+.btn-dl-mac .btn-mac-sheen{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(115deg,transparent 30%,rgba(127,176,255,.20) 50%,transparent 70%);
+  transform:translateX(-130%);
+  transition:transform .9s cubic-bezier(.2,.7,.3,1);
+}
+.btn-dl-mac:hover .btn-mac-sheen{transform:translateX(130%)}
+.btn-dl-mac:hover{
+  transform:translateY(-2px);border-color:var(--soft);
+  box-shadow:0 14px 38px -16px rgba(0,0,0,.45),0 4px 14px -6px var(--glow-strong),
+    inset 0 1px 0 rgba(255,255,255,.28);
+}
+.btn-icon-apple{color:var(--text)}
+
+/* the GitHub ghost button keeps a sub-label too, so the trio aligns */
+.btn-dl-ghost{
+  background:var(--surface);color:var(--text);border-color:var(--line-strong);
+}
+.btn-dl-ghost:hover{transform:translateY(-2px);border-color:var(--soft);background:var(--surface-2)}
+.btn-dl-ghost .btn-sub{color:var(--faint);opacity:1}
+.badges{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:12px;color:var(--faint);
+}
+.badges .dot{width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.6}
+
+/* ---------- hero proof chip (the 94% receipt, surfaced early) ----------
+   A compact, tactile stat card sitting right under the badges: the big number
+   in brand blue, a one-line claim, and a corner arrow that jumps to the full
+   benchmark section. Reads as a confident proof point, not a banner. */
+.hero-proof{
+  margin-top:22px;display:inline-flex;align-items:center;gap:16px;
+  padding:13px 18px;border-radius:14px;max-width:420px;
+  background:linear-gradient(160deg,var(--surface),color-mix(in srgb,var(--primary) 7%,var(--surface)));
+  border:1px solid var(--line-strong);
+  box-shadow:0 14px 36px -26px var(--glow-strong),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .2s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease);
+}
+.hero-proof:hover{transform:translateY(-2px);border-color:var(--border-hot);
+  box-shadow:0 20px 46px -26px var(--glow-strong),inset 0 1px 0 rgba(255,255,255,.08)}
+.hero-proof:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.hp-num{font-family:var(--sans);font-weight:800;font-size:2.3rem;line-height:1;
+  letter-spacing:-.03em;color:#aecdff;flex:none;font-variant-numeric:tabular-nums}
+html[data-theme="light"] .hp-num{color:#1f5fd4}
+.hp-pct{font-size:1.05rem;font-weight:700;margin-left:1px;color:var(--soft)}
+.hp-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hp-line{font-size:.95rem;line-height:1.3;color:var(--text);font-weight:500}
+.hp-line b{font-weight:700;color:var(--text)}
+.hp-sub{font-size:12px;color:var(--faint);letter-spacing:.01em}
+.hp-arrow{width:16px;height:16px;flex:none;color:var(--soft);margin-left:auto;
+  transition:transform .25s var(--ease)}
+.hero-proof:hover .hp-arrow{transform:translate(2px,-2px)}
+
+/* ---------- terminal lead-in (so the demo has a deliberate intro) ---------- */
+.term-lead{
+  margin-top:clamp(30px,5vh,44px);
+  display:flex;align-items:center;gap:14px;max-width:498px;
+}
+.tl-eyebrow{
+  font-size:12px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--eyebrow);flex:none;
+}
+.tl-rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line-strong),transparent)}
+
+/* ---------- terminal (mac-style) ---------- */
+.term{
+  margin-top:14px;
+  width:100%;max-width:498px;border-radius:14px;
+  background:var(--term-bg);border:1px solid var(--line-strong);
+  box-shadow:0 26px 64px -26px rgba(0,0,0,.62),0 2px 0 rgba(255,255,255,.03) inset,0 0 60px -30px var(--glow);
+  overflow:hidden;font-family:var(--mono);
+}
+.term-head{display:flex;align-items:center;gap:8px;padding:11px 14px;
+  background:var(--term-head);border-bottom:1px solid rgba(255,255,255,.06)}
+.tl{width:11px;height:11px;border-radius:50%}
+.tl.r{background:#ff5f57}.tl.y{background:#febc2e}.tl.g{background:#28c840}
+.term-title{margin-left:8px;font-size:12px;color:#8893a8;letter-spacing:.02em}
+.term-body{padding:16px 16px 18px;font-size:12.7px;line-height:1.85;color:#d6deec;min-height:208px}
+.term-body .ln{display:block;white-space:pre-wrap;word-break:break-word}
+.term-body .p{color:#5e83c4}
+.term-body .cmd{color:#eaf0fb}
+.term-body .ok{color:#46c39a}
+.term-body .key{color:#7FB0FF}
+.term-body .dim{color:#7e8aa0}
+.term-body .out{color:#aab4c6}
+.caret{display:inline-block;width:8px;height:15px;background:#7FB0FF;
+  margin-left:1px;vertical-align:-2px;animation:blink 1.05s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+/* one-time "lock" flash: the brain's recall pulse lands here */
+.term-lit{animation:termLit .9s var(--ease)}
+@keyframes termLit{
+  0%{box-shadow:0 26px 64px -26px rgba(0,0,0,.62),0 0 0 0 var(--glow-strong),0 0 60px -30px var(--glow)}
+  30%{box-shadow:0 26px 64px -26px rgba(0,0,0,.62),0 0 0 2px var(--glow-strong),0 0 60px 0 var(--glow-strong)}
+  100%{box-shadow:0 26px 64px -26px rgba(0,0,0,.62),0 0 0 0 transparent,0 0 60px -30px var(--glow)}
+}
+
+.scroll-cue{
+  position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+  z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);pointer-events:none;
+}
+.scroll-cue .mouse{width:22px;height:34px;border:1.5px solid var(--line-strong);border-radius:12px;position:relative}
+.scroll-cue .mouse::after{content:"";position:absolute;top:6px;left:50%;width:3px;height:6px;
+  border-radius:2px;background:var(--soft);transform:translateX(-50%);
+  animation:wheel 1.6s var(--ease) infinite}
+@keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}35%{opacity:1}70%,100%{opacity:0;transform:translate(-50%,9px)}}
+@media(max-width:620px){.scroll-cue{display:none}}
+
+/* ======================================================================
+   PROBLEM - 3 cards
+   ====================================================================== */
+.problem-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:clamp(16px,2.4vw,24px);
+}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:clamp(24px,3vw,32px);position:relative;overflow:hidden;
+  transition:transform .25s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease);
+}
+.card:hover{transform:translateY(-3px);border-color:var(--line-strong);
+  box-shadow:0 22px 50px -28px var(--glow)}
+.card-ic{
+  width:46px;height:46px;border-radius:13px;display:inline-grid;place-items:center;
+  background:linear-gradient(140deg,rgba(47,123,246,.18),rgba(47,123,246,.04));
+  border:1px solid rgba(47,123,246,.28);color:var(--soft);margin-bottom:16px;
+}
+.card-ic svg{width:22px;height:22px}
+.card h3{font-size:1.18rem;font-weight:600;letter-spacing:-.01em;margin-bottom:8px;color:var(--text)}
+.card p{font-size:.98rem;line-height:1.6;color:var(--muted)}
+.card-num{position:absolute;top:18px;right:22px;font-family:var(--mono);
+  font-size:12px;color:var(--faint);opacity:.7}
+
+/* ======================================================================
+   RECALL  (constellation pulse) - split layout
+   ====================================================================== */
+.recall-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(28px,4vw,56px);align-items:center;
+}
+.recall-canvas-wrap{position:relative;width:100%;aspect-ratio:1/1;max-height:60vh}
+#recallCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.recall-halo{position:absolute;inset:8%;border-radius:50%;
+  background:radial-gradient(circle at 50% 46%,var(--glow),transparent 62%);
+  filter:blur(10px);pointer-events:none;z-index:-1}
+.pipe-list{margin-top:26px;display:flex;flex-direction:column;gap:14px}
+.pipe-row{display:flex;align-items:flex-start;gap:14px}
+.pipe-tag{
+  flex:none;min-width:108px;font-family:var(--mono);font-size:12px;
+  color:var(--soft);border:1px solid var(--line-strong);border-radius:8px;
+  padding:6px 10px;text-align:center;background:var(--badge-bg);
+}
+.pipe-row p{font-size:.96rem;line-height:1.55;color:var(--muted)}
+.pipe-row p b{color:var(--text);font-weight:600}
+@media(max-width:880px){
+  .recall-grid{grid-template-columns:1fr}
+  .recall-canvas-wrap{order:-1;max-width:480px;margin:0 auto;max-height:none}
+}
+
+/* ======================================================================
+   GRAPHIFY
+   ====================================================================== */
+.gfy-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:14px;margin-bottom:clamp(28px,4vh,44px);
+}
+.gfy-stat{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;text-align:center;
+}
+.gfy-stat strong{display:block;font-size:1.9rem;font-weight:700;letter-spacing:-.02em;
+  color:var(--text);font-family:var(--sans)}
+.gfy-stat span{display:block;margin-top:4px;font-family:var(--mono);font-size:12px;
+  letter-spacing:.04em;color:var(--faint);text-transform:uppercase}
+.gfy-tools{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;margin-bottom:28px;
+}
+.gfy-tool{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;transition:transform .22s var(--ease),border-color .22s var(--ease);
+}
+.gfy-tool:hover{transform:translateY(-3px);border-color:var(--soft)}
+.gfy-tool--hot{border-color:rgba(47,123,246,.4);background:linear-gradient(160deg,var(--surface),rgba(47,123,246,.06))}
+.gfy-tool code{display:inline-block;margin-bottom:8px;font-family:var(--mono);
+  font-size:13.5px;color:var(--soft);font-weight:500;
+  background:var(--surface-2);border:1px solid var(--line);padding:3px 9px;border-radius:7px}
+.gfy-tool p{font-size:.94rem;line-height:1.55;color:var(--muted)}
+.gfy-langs{display:flex;flex-wrap:wrap;gap:9px}
+.gfy-langs span{
+  font-family:var(--mono);font-size:12.5px;color:var(--muted);
+  border:1px solid var(--line);border-radius:8px;padding:7px 13px;background:var(--surface);
+}
+
+/* ======================================================================
+   BENCHMARK
+   ====================================================================== */
+.bench{position:relative}
+.bench-metrics{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:14px;margin-bottom:26px;
+}
+.bmetric{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:26px 22px;text-align:center;
+}
+.bmetric--hot{
+  border-color:rgba(47,123,246,.42);
+  background:linear-gradient(165deg,var(--surface),rgba(47,123,246,.08));
+  box-shadow:0 20px 50px -30px var(--glow-strong);
+}
+.bmetric-num{font-size:2.6rem;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1}
+.bmetric-num span{font-size:1.1rem;font-weight:600;color:var(--soft);margin-left:2px}
+.bmetric-label{margin-top:10px;font-size:.84rem;line-height:1.4;color:var(--muted)}
+/* --muted clears AA (~4.6:1 dark, ~7:1 light); --faint fell just under 4.5 */
+.bmetric-label em{display:block;font-style:normal;color:var(--muted);font-size:.78rem;margin-top:3px;opacity:.92}
+.bench-foot{
+  font-size:.92rem;line-height:1.65;color:var(--faint);max-width:78ch;
+  border-left:2px solid var(--line-strong);padding-left:18px;
+}
+.bench-foot strong{color:var(--muted)}
+.bench-foot a{color:var(--soft);text-decoration:underline;text-underline-offset:3px}
+.bench-foot a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* ======================================================================
+   COORDINATION - animated handoff diagram
+   ====================================================================== */
+.coord-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  gap:clamp(28px,4vw,56px);align-items:center;
+}
+.coord-points{margin-top:24px;display:flex;flex-direction:column;gap:18px}
+.coord-point{display:flex;gap:14px;align-items:flex-start}
+.coord-point .cp-ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+  background:var(--badge-bg);border:1px solid var(--line-strong);color:var(--soft)}
+.coord-point .cp-ic svg{width:18px;height:18px}
+.coord-point h3{font-size:1.02rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.coord-point p{font-size:.94rem;line-height:1.55;color:var(--muted)}
+.coord-point p code{font-size:.84em}
+.coord-tagline{
+  margin-top:24px;font-family:var(--mono);font-size:13px;color:var(--soft);
+  border:1px dashed var(--line-strong);border-radius:10px;padding:12px 16px;
+  background:var(--badge-bg);
+}
+/* handoff diagram */
+.handoff{
+  position:relative;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:clamp(22px,3vw,34px);overflow:hidden;
+  min-height:340px;display:flex;align-items:center;justify-content:center;
+}
+.handoff svg{width:100%;height:auto;max-width:460px;display:block}
+.hf-node rect{fill:var(--surface-2);stroke:var(--line-strong)}
+.hf-brain rect{fill:url(#hfBrainGrad);stroke:var(--primary)}
+.hf-label{font-family:var(--mono);font-size:14px;fill:var(--text)}
+.hf-sub{font-family:var(--mono);font-size:13px;fill:var(--faint)}
+.hf-edge{stroke:var(--link-hot);stroke-width:1.5;fill:none}
+.hf-packet{fill:var(--pulse)}
+@media(max-width:880px){
+  .coord-grid{grid-template-columns:1fr}
+  .handoff{order:-1}
+}
+
+/* ======================================================================
+   CONFIDENCE
+   ====================================================================== */
+.conf-grid{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  gap:clamp(28px,4vw,56px);align-items:center;
+}
+.conf-demo{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:clamp(22px,3vw,30px);
+}
+.conf-row{
+  display:flex;align-items:center;gap:14px;padding:16px 0;
+  border-bottom:1px solid var(--line);
+}
+.conf-row:last-child{border-bottom:none}
+.conf-fact{flex:1;min-width:0}
+.conf-fact .ftxt{font-size:.96rem;color:var(--text);line-height:1.4}
+.conf-fact .fmeta{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:4px}
+.conf-meter{flex:none;width:150px}
+.conf-bar{height:8px;border-radius:6px;background:var(--surface-3);overflow:hidden;position:relative}
+.conf-fill{height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--soft),var(--primary));
+  transform-origin:left;transform:scaleX(var(--v,0));
+  transition:transform 1.1s var(--ease);}
+.conf-score{font-family:var(--mono);font-size:12px;color:var(--soft);margin-top:6px;text-align:right;font-weight:500}
+.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px;
+  font-family:var(--mono);font-size:12px;color:var(--faint)}
+.conf-legend span{display:inline-flex;align-items:center;gap:7px}
+.conf-legend i{width:12px;height:6px;border-radius:3px;display:inline-block}
+.conf-legend i.rel{background:var(--faint)}
+.conf-legend i.tru{background:linear-gradient(90deg,var(--soft),var(--primary))}
+@media(max-width:880px){.conf-grid{grid-template-columns:1fr}.conf-meter{width:120px}}
+
+/* ======================================================================
+   LOCAL - checklist
+   ====================================================================== */
+.local{
+  background:
+    radial-gradient(900px 600px at 80% 0%, var(--halo), transparent 60%),
+    var(--bg);
+}
+.local-list{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px 28px;
+}
+.local-item{display:flex;gap:13px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px}
+.local-item .lk{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+  background:var(--badge-bg);border:1px solid var(--line-strong);color:var(--soft);margin-top:1px}
+.local-item .lk svg{width:14px;height:14px}
+.local-item h3{font-size:.98rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.local-item p{font-size:.9rem;line-height:1.5;color:var(--muted)}
+.local-item p code{font-size:.84em}
+
+/* ======================================================================
+   TIERS
+   ====================================================================== */
+.tier-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+}
+.tier{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:24px;position:relative;
+  transition:transform .22s var(--ease),border-color .22s var(--ease);
+}
+.tier:hover{transform:translateY(-3px);border-color:var(--line-strong)}
+.tier--default{border-color:rgba(47,123,246,.4);
+  background:linear-gradient(165deg,var(--surface),rgba(47,123,246,.06))}
+.tier-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.tier-head h3{font-family:var(--mono);font-size:1.05rem;font-weight:600;color:var(--text)}
+.tier-n{font-size:1.9rem;font-weight:700;color:var(--soft);letter-spacing:-.02em}
+.tier p{font-size:.92rem;line-height:1.55;color:var(--muted);margin-bottom:14px}
+.tier p code{font-size:.84em}
+.tier-tag{
+  display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);border:1px solid var(--line);
+  border-radius:7px;padding:4px 10px;
+}
+.tier--default .tier-tag{color:var(--soft);border-color:var(--line-strong);background:var(--badge-bg)}
+
+/* ======================================================================
+   FINAL CTA + FOOTER
+   ====================================================================== */
+.final{
+  position:relative;text-align:center;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(1000px 600px at 50% 120%, var(--glow), transparent 62%),
+    linear-gradient(180deg,var(--bg),var(--bg-deep));
+  border-top:1px solid var(--line);
+}
+.final-inner{max-width:760px;margin:0 auto;padding:clamp(72px,12vh,128px) clamp(20px,5vw,44px)}
+.final h2{font-size:clamp(2rem,5vw,3.2rem);line-height:1.05;letter-spacing:-.03em;font-weight:800}
+.final h2 .grad{color:#aecdff}
+html[data-theme="light"] .final h2 .grad{color:#1f5fd4}
+.final p{margin-top:18px;font-size:1.1rem;color:var(--muted)}
+.final .cta{justify-content:center;margin-top:32px;margin-bottom:0}
+
+.footer{background:var(--bg-deep);border-top:1px solid var(--line)}
+.footer-inner{
+  max-width:var(--maxw);margin:0 auto;padding:40px clamp(20px,5vw,44px);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;
+}
+.footer-brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);
+  font-weight:600;font-size:14px;color:var(--text)}
+.footer-brand .fm{width:24px;height:24px;border-radius:6px;overflow:hidden;display:grid;place-items:center}
+.footer-brand .fm img{width:100%;height:100%;object-fit:contain}
+html[data-theme="light"] .footer-brand .fm img{filter:saturate(1.1) brightness(.94)}
+.footer-links{display:flex;flex-wrap:wrap;gap:6px}
+.footer-links a{
+  font-family:var(--mono);font-size:13px;color:var(--muted);
+  padding:10px 12px;border-radius:9px;min-height:44px;display:inline-flex;align-items:center;
+  transition:color .2s,background .2s;
+}
+.footer-links a:hover{color:var(--text);background:var(--surface-2)}
+.footer-links a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.footer-copy{width:100%;font-family:var(--mono);font-size:12px;color:var(--faint);
+  padding-top:18px;border-top:1px solid var(--line)}
+
+/* ======================================================================
+   PREMIUM MICRO-INTERACTIONS - additive polish layer
+   Extends (never duplicates) the base hover rules above: realistic press,
+   icon nudges, soft blue glow blooms, card sheen + border-hot, chip lift,
+   underline sweeps, and a unified focus-visible ring. All gated to a calm
+   static state under prefers-reduced-motion at the bottom of the file.
+   ====================================================================== */
+
+/* ---------- unified focus-visible ring (a11y, never regress) ----------
+   A consistent two-layer ring so every keyboard-reachable control reads the
+   same. Specific overrides above still win where they set offset; this just
+   guarantees coverage. */
+a:focus-visible,button:focus-visible,
+.pipe-tag:focus-visible,.gfy-langs span:focus-visible{
+  outline:2px solid var(--primary);outline-offset:3px;
+  border-radius:8px;
+}
+
+/* ---------- BUTTONS: press + icon nudge + glow bloom ----------
+   The base .btn / .btn-dl / .nav-dl / .nav-ghost already lift on hover; we
+   add the realistic press (settles to ~.985) and a small leading-icon nudge,
+   plus a soft blue glow bloom on the simple .btn pair. */
+.btn:active,.nav-dl:active{transform:translateY(0) scale(var(--press))}
+.btn-dl:active{transform:translateY(-1px) scale(var(--press))}
+.nav-ghost:active,.theme-toggle:active{transform:translateY(0) scale(var(--press))}
+.btn,.nav-dl,.nav-ghost{transition:transform .18s var(--ease),box-shadow .25s var(--ease),background .25s,border-color .25s,color .25s}
+.btn svg,.nav-dl svg,.nav-ghost svg{transition:transform .2s var(--ease)}
+.btn-primary:hover svg,.nav-dl:hover svg{transform:translateY(1px)}      /* download arrow dips */
+.btn-ghost:hover svg,.nav-ghost:hover svg{transform:translateY(-1px) scale(1.06)}
+.btn-primary:hover{box-shadow:0 16px 40px -10px var(--glow-strong),0 0 0 1px var(--glow),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-ghost:hover{box-shadow:0 14px 34px -16px var(--glow)}
+
+/* the realistic download trio: leading icon gives a tactile nudge on hover,
+   and a press settle that reads as a real click */
+.btn-dl .btn-icon{transition:transform .22s var(--ease)}
+.btn-dl-primary:hover .btn-icon{transform:translateY(-50%) translateY(1px)}
+.btn-dl-mac:hover .btn-icon,.btn-dl-ghost:hover .btn-icon{transform:translateY(-50%) translateY(-1px) scale(1.05)}
+
+/* hero/CTA primary download gets a cursor-follow glow (JS sets --mx/--my) */
+.btn-dl-primary::after{
+  content:"";position:absolute;z-index:1;pointer-events:none;
+  left:var(--mx,50%);top:var(--my,50%);width:200px;height:200px;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.28),transparent 62%);
+  opacity:0;transition:opacity .25s var(--ease);mix-blend-mode:soft-light;
+}
+.btn-dl-primary:hover::after{opacity:1}
+
+/* ---------- NAV: logo lift, link/brand underline-grow, toggle knob ---------- */
+.brand{transition:transform .2s var(--ease),color .2s var(--ease)}
+.brand:hover{transform:translateY(-1px)}
+.brand-mark{transition:transform .25s var(--ease),filter .25s var(--ease)}
+.brand:hover .brand-mark{transform:rotate(-4deg) scale(1.06);
+  filter:drop-shadow(0 6px 14px var(--glow-strong))}
+.brand-word{transition:filter .25s var(--ease)}
+.brand:hover .brand-word{filter:drop-shadow(0 2px 10px var(--glow))}
+html[data-theme="light"] .brand:hover .brand-word{filter:saturate(1.12) brightness(.92) drop-shadow(0 2px 10px var(--glow))}
+/* the theme toggle icon now spins + scales on hover/press for a satisfying flip */
+.theme-toggle svg{transition:transform .35s var(--ease),opacity .2s var(--ease)}
+.theme-toggle:hover svg{transform:rotate(35deg) scale(1.08)}
+.theme-toggle:active svg{transform:rotate(35deg) scale(.9)}
+.theme-toggle:hover{box-shadow:0 8px 20px -12px var(--glow-strong)}
+.nav-ghost:hover{box-shadow:0 8px 20px -12px var(--glow)}
+
+/* ---------- CARDS: lift + border-hot + top-edge sheen + faint wash ----------
+   A shared cap-line sheen sits on each card's top edge and brightens on hover;
+   borders warm to --border-hot and a faint blue wash washes the surface. The
+   problem .card already lifts; we just add the sheen + wash + warmer border. */
+.card,.gfy-stat,.gfy-tool,.bmetric,.local-item,.tier,.conf-demo,.handoff{position:relative;isolation:isolate}
+.card::before,.gfy-stat::before,.gfy-tool::before,.bmetric::before,
+.local-item::before,.tier::before,.conf-demo::before,.handoff::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:1px;z-index:2;
+  background:linear-gradient(90deg,transparent,var(--sheen),transparent);
+  opacity:0;transition:opacity .3s var(--ease);pointer-events:none;
+}
+.card:hover::before,.gfy-stat:hover::before,.gfy-tool:hover::before,
+.bmetric:hover::before,.local-item:hover::before,.tier:hover::before,
+.conf-demo:hover::before,.handoff:hover::before{opacity:1}
+
+/* gradient wash that fades in under the content on hover */
+.card::after,.gfy-stat::after,.bmetric::after,.local-item::after,
+.tier::after,.conf-demo::after,.handoff::after{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;
+  background:radial-gradient(120% 90% at 50% 0%,var(--wash),transparent 70%);
+  opacity:0;transition:opacity .3s var(--ease);pointer-events:none;
+}
+.card:hover::after,.gfy-stat:hover::after,.bmetric:hover::after,
+.local-item:hover::after,.tier:hover::after,.conf-demo:hover::after,
+.handoff:hover::after{opacity:1}
+
+/* warm the border + lift the cards that didn't already have a strong hover */
+.card:hover{border-color:var(--border-hot)}
+.gfy-stat{transition:transform .22s var(--ease),border-color .22s var(--ease),box-shadow .25s var(--ease)}
+.gfy-stat:hover{transform:translateY(-3px);border-color:var(--border-hot);box-shadow:0 18px 40px -28px var(--glow)}
+.bmetric{transition:transform .22s var(--ease),border-color .22s var(--ease),box-shadow .25s var(--ease)}
+.bmetric:hover{transform:translateY(-3px);border-color:var(--border-hot);box-shadow:0 20px 46px -28px var(--glow-strong)}
+.local-item{transition:transform .22s var(--ease),border-color .22s var(--ease),box-shadow .25s var(--ease)}
+.local-item:hover{transform:translateY(-3px);border-color:var(--border-hot);box-shadow:0 16px 38px -28px var(--glow)}
+.conf-demo{transition:transform .25s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.conf-demo:hover{border-color:var(--border-hot);box-shadow:0 22px 50px -30px var(--glow)}
+.handoff{transition:transform .25s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.handoff:hover{border-color:var(--border-hot);box-shadow:0 22px 50px -30px var(--glow)}
+.tier:hover{border-color:var(--border-hot);box-shadow:0 20px 46px -30px var(--glow)}
+.gfy-tool:hover{border-color:var(--border-hot);box-shadow:0 18px 40px -28px var(--glow)}
+/* the highlighted cards already wear a blue tint - keep their border hot too */
+.tier--default:hover,.gfy-tool--hot:hover,.bmetric--hot:hover{border-color:var(--soft)}
+
+/* the card icon tiles answer the hover with a tiny lift */
+.card-ic,.local-item .lk,.coord-point .cp-ic{transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease)}
+.card:hover .card-ic{transform:translateY(-2px) scale(1.05);box-shadow:0 8px 20px -10px var(--glow-strong)}
+.local-item:hover .lk{transform:scale(1.08);border-color:var(--border-hot)}
+
+/* optional very-subtle pointer-tilt on the problem cards (JS sets --rx/--ry) */
+.card{transform:perspective(900px) rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg)) translateY(0);
+  transition:transform .2s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.card.tilting{transition:transform .08s linear,border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.card:hover{box-shadow:0 22px 50px -28px var(--glow)}
+
+/* ---------- COORD points: row tile lift + chip warm ---------- */
+.coord-point{transition:transform .2s var(--ease)}
+.coord-point:hover{transform:translateX(3px)}
+.coord-point:hover .cp-ic{border-color:var(--border-hot);box-shadow:0 6px 16px -10px var(--glow-strong);color:var(--soft)}
+
+/* ---------- CODE / TOOL CHIPS: subtle background + border lift ----------
+   recall / related / handoff / where_defined etc. and the language pills + the
+   pipeline tags all answer a hover with a faint surface + warm border. */
+.gfy-tool code,.tier p code,.coord-point p code,.local-item p code,
+.sec-lede code,.bench-foot code,p code{
+  transition:background .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease),box-shadow .2s var(--ease);
+}
+.gfy-tool:hover code,.tier:hover p code{
+  border-color:var(--border-hot);box-shadow:0 4px 12px -6px var(--glow);
+}
+.gfy-langs span{
+  transition:transform .18s var(--ease),border-color .18s var(--ease),color .18s var(--ease),background .2s var(--ease);
+  cursor:default;
+}
+.gfy-langs span:hover{
+  transform:translateY(-2px);border-color:var(--border-hot);color:var(--text);
+  background:var(--surface-2);box-shadow:0 8px 18px -12px var(--glow);
+}
+.pipe-tag{transition:border-color .2s var(--ease),box-shadow .2s var(--ease),transform .2s var(--ease)}
+.pipe-row:hover .pipe-tag{border-color:var(--border-hot);box-shadow:0 6px 16px -10px var(--glow);transform:translateY(-1px)}
+.coord-tagline{transition:border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.coord-tagline:hover{border-color:var(--border-hot);box-shadow:0 10px 26px -18px var(--glow)}
+
+/* ---------- LINKS: underline-sweep, no layout shift ----------
+   bench-foot already underlines; give it (and footer + nav-ghost text) a
+   color shift, and a sweeping underline on the footer/bench inline links via a
+   gradient background that grows from left. */
+.footer-links a,.bench-foot a{
+  background-image:linear-gradient(var(--soft),var(--soft));
+  background-repeat:no-repeat;background-position:0 100%;
+  background-size:0% 1.5px;
+  transition:background-size .28s var(--ease),color .2s var(--ease),background-color .2s var(--ease);
+}
+.footer-links a{text-decoration:none}
+.footer-links a:hover{background-size:100% 1.5px}
+.bench-foot a{text-decoration:none;background-position:0 1.05em;
+  padding-block:5px;     /* lifts the inline tap target to >=44px without breaking the paragraph flow */
+}
+.bench-foot a:hover{background-size:100% 1.5px;color:var(--text)}
+/* the footer brand mark answers a hover too */
+.footer-brand .fm{transition:transform .25s var(--ease)}
+.footer-brand:hover .fm{transform:rotate(-4deg) scale(1.06)}
+
+/* ---------- STAT count-up (JS) - reserve width so the tick doesn't reflow ---------- */
+.gfy-stat strong,.bmetric-num{font-variant-numeric:tabular-nums}
+
+/* ======================================================================
+   RESPONSIVE
+   ====================================================================== */
+@media(max-width:560px){
+  body{font-size:16px}
+  .term-body{font-size:11.6px}
+  .btn{flex:1 1 auto}
+  .btn-dl{flex:1 1 100%;width:100%}
+  .conf-row{flex-wrap:wrap}
+  .conf-meter{width:100%}
+}
+
+/* ======================================================================
+   REDUCED MOTION - every animation settles calm/static
+   ====================================================================== */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none !important}
+  .eyebrow .live::after,.scroll-cue .mouse::after{animation:none}
+  .caret{animation:none;opacity:1}
+  .reveal{opacity:1;transform:none}
+  .scroll-cue{display:none}
+  .btn-dl-primary{animation:none;background-position:0% 50%}
+  .btn-dl-primary::before,.btn-dl-mac .btn-mac-sheen{transition:none}
+  /* premium micro-interactions settle to a calm static state: no transforms,
+     no tilts, no cursor glow, no sheen/wash flicker - color/border shifts only */
+  .card{transform:none !important}
+  .card:hover,.gfy-stat:hover,.gfy-tool:hover,.bmetric:hover,.local-item:hover,
+  .tier:hover,.conf-demo:hover,.handoff:hover,.coord-point:hover,.brand:hover,
+  .btn:hover,.btn-dl:hover,.nav-dl:hover,.nav-ghost:hover,.theme-toggle:hover,
+  .gfy-langs span:hover,.pipe-row:hover .pipe-tag,.footer-brand:hover .fm,
+  .brand:hover .brand-mark{transform:none !important}
+  .btn:active,.btn-dl:active,.nav-dl:active,.nav-ghost:active,
+  .theme-toggle:active,.theme-toggle:active svg{transform:none !important}
+  .btn-primary:hover svg,.btn-ghost:hover svg,.nav-dl:hover svg,.nav-ghost:hover svg,
+  .theme-toggle:hover svg,.btn-dl-primary:hover .btn-icon,.btn-dl-mac:hover .btn-icon,
+  .btn-dl-ghost:hover .btn-icon,.card:hover .card-ic,.local-item:hover .lk{transform:none !important}
+  .btn-dl-primary::after{display:none}
+}
+</style>
 </head>
-
 <body>
+<a class="skip" href="#hero-headline">Skip to content</a>
 
-<!-- Grain filter (SVG, used by .grain overlay in CSS) -->
-<svg style="position:absolute;width:0;height:0" aria-hidden="true">
-  <filter id="grain-filter">
-    <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch" />
-    <feColorMatrix type="saturate" values="0" />
-  </filter>
-</svg>
-
-<!-- Scroll progress bar -->
-<div class="scroll-progress" aria-hidden="true"></div>
-
-<!-- Nav -->
-<header class="nav">
-  <a href="#top" class="nav-logo" aria-label="NeuroVault home">
-    <!-- Inline SVG so the mark inherits currentColor — controlled by
-         the theme via var(--peach). Default theme renders the logo in
-         peach; data-theme="blue" rebinds --peach to cyan and the mark
-         follows. Same SVG geometry as the in-app activity icon and
-         the favicon, so the brand reads consistently. -->
-    <img class="nav-logo-icon" src="./assets/mark-dark.png" width="32" height="32" alt="" />
-    <img class="nav-logo-word" src="./assets/wordmark-dark.png" alt="NeuroVault" />
-  </a>
-  <nav class="nav-links">
-    <a href="#graphify">Graphify</a>
-    <a href="#features">Features</a>
-    <a href="#use-cases">Use cases</a>
-    <a href="#benchmarks">Benchmarks</a>
-    <a href="#teams">Teams</a>
-    <a href="#privacy">Privacy</a>
-    <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">GitHub ↗</a>
-  </nav>
-  <div class="nav-actions">
-    <label class="themeToggle st-sunMoonThemeToggleBtn" for="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">
-      <input type="checkbox" id="themeToggle" class="themeToggleInput" />
-      <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
-        <mask id="moon-mask">
-          <rect x="0" y="0" width="20" height="20" fill="white"></rect>
-          <circle cx="11" cy="3" r="8" fill="black"></circle>
-        </mask>
-        <circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle>
-        <g class="sunRays">
-          <circle class="sunRay sunRay1" cx="18" cy="10" r="1.5"></circle>
-          <circle class="sunRay sunRay2" cx="14" cy="16.928" r="1.5"></circle>
-          <circle class="sunRay sunRay3" cx="6" cy="16.928" r="1.5"></circle>
-          <circle class="sunRay sunRay4" cx="2" cy="10" r="1.5"></circle>
-          <circle class="sunRay sunRay5" cx="6" cy="3.072" r="1.5"></circle>
-          <circle class="sunRay sunRay6" cx="14" cy="3.072" r="1.5"></circle>
-        </g>
-      </svg>
-    </label>
-    <a href="/docs/" class="nav-docs"><svg class="nav-docs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Docs</a>
-    <a href="#download" class="nav-cta"><svg class="nav-cta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</a>
+<!-- ===================== STICKY NAV ===================== -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="NeuroVault home">
+      <span class="brand-mark" aria-hidden="true">
+        <img src="assets/mark-dark.png" alt="" width="30" height="30" decoding="async">
+      </span>
+      <img class="brand-word" src="assets/wordmark-dark.png" alt="NeuroVault" width="273" height="18" decoding="async">
+    </a>
+    <div class="nav-right">
+      <a class="nav-ghost" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener" aria-label="View NeuroVault on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Star
+      </a>
+      <a class="nav-dl" href="#download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+        Download
+      </a>
+      <button class="theme-toggle" id="themeBtn" type="button" aria-label="Toggle light and dark theme" aria-pressed="false">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>
+      </button>
+    </div>
   </div>
 </header>
 
-<!-- Hero -->
-<section id="top" class="hero">
-  <canvas id="nv-brain" class="hero-brain-bg" aria-hidden="true"></canvas>
-  
-  
-  <div class="grid-overlay" aria-hidden="true"></div>
+<main id="top">
 
-  <div class="hero-inner">
-    <div class="hero-chip">
-      <span class="hero-chip-dot"></span>
-      <span>v0.5.1 · One-click auto-update · Agent auto-start · Per-folder brains · Windows + macOS live</span>
-    </div>
-
-    <p class="hero-tagline">
-      Claude forgets you after every conversation.
-      <span class="hero-tagline-accent">NeuroVault doesn't.</span>
-    </p>
-
-    <p class="hero-usp">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <span><strong>100% local.</strong> Your memory is embedded on your own machine and never leaves it — no cloud, no API keys, no account. <em>Private by architecture, not a setting you switch on.</em></span>
-    </p>
-
-    <p class="hero-sub">
-      A local-first memory layer for AI agents. Notes, decisions, people, projects —
-      captured once, recalled whenever any MCP-speaking agent asks.
-      Analytics mode shows the structure of your brain at a glance: bigger
-      nodes for what gets referenced most, soft tints for clusters of
-      linked notes.
-    </p>
-
-    <div class="hero-ctas" id="download">
-      <a class="btn btn-primary" href="https://github.com/sirdath/NeuroVault/releases/latest" id="primary-download">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span id="primary-label">Download for Windows</span>
-        <span class="btn-sub" id="primary-sub">x64 installer · NSIS</span>
+<!-- ===================== HERO ===================== -->
+<!-- ===================== HERO + MORPH (one unified zone) =====================
+     A single tall wrapper. The sticky #brain canvas is the ONE render: it
+     assembles the logo on load, then scroll-morphs the SAME nodes into the
+     constellation as the transparent .morph-spacer below scrolls past. No
+     second canvas, no clone, no hand-off. -->
+<div class="hero-wrap">
+  <canvas id="brain" aria-hidden="true"></canvas>
+  <section class="hero" aria-labelledby="hero-headline">
+  <div class="hero-aurora" aria-hidden="true"></div>
+  <canvas id="heroDust" aria-hidden="true"></canvas>
+  <div class="hero-stage">
+    <div class="hero-copy" id="heroCopy">
+      <p class="eyebrow"><span class="live" aria-hidden="true"></span>Local-first AI memory</p>
+      <h1 id="hero-headline">
+        <span class="h1-line">
+          <span class="word">Give</span> <span class="word">your</span> <span class="word">AI</span> <span class="word">a</span> <span class="word">memory</span> <span class="word">that</span>
+        </span>
+        <span class="h1-line">
+          <span class="word grad" id="accentWord" tabindex="-1">survives the window close.</span>
+        </span>
+      </h1>
+      <p class="lead">Say it once - <b>any MCP agent</b> (Claude Code, Claude Desktop, Cursor, Codex) recalls it the moment it's relevant. <b>100% on your machine.</b></p>
+      <div class="cta" id="download">
+        <a class="btn-dl btn-dl-primary" id="primary-download" href="https://github.com/sirdath/NeuroVault/releases/latest">
+          <svg class="btn-icon btn-icon-win" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.1 10.2 4v7.4H3zM10.2 12.5V20L3 18.9v-6.4zM11.3 3.9 21 2.5v8.9h-9.7zM21 12.5v8.9l-9.7-1.4v-7.5z"/></svg>
+          <span class="btn-main" id="primary-label">Download for Windows</span>
+          <span class="btn-sub" id="primary-sub">x64 installer &middot; NSIS</span>
+        </a>
+        <a class="btn-dl btn-dl-mac" id="mac-download" href="https://github.com/sirdath/NeuroVault/releases/latest" aria-label="Download NeuroVault for Mac (Apple Silicon)">
+          <span class="btn-mac-sheen" aria-hidden="true"></span>
+          <svg class="btn-icon btn-icon-apple" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.45 2.23-1.18 3.03-.79.86-2.06 1.53-3.13 1.45-.13-1.12.42-2.27 1.16-3.03.83-.85 2.21-1.49 3.15-1.45zM20.57 17.5c-.55 1.27-.81 1.83-1.52 2.95-.99 1.56-2.39 3.51-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.78-4.04-3.34-2.78-4.36-3.07-9.48-1.36-12.2 1.22-1.94 3.13-3.07 4.93-3.07 1.83 0 2.98 1 4.49 1 1.46 0 2.35-1 4.47-1 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.73 9.73z"/></svg>
+          <span class="btn-main" id="mac-label">Download for Mac</span>
+          <span class="btn-sub" id="mac-sub">Apple Silicon (M1-M4) &middot; DMG</span>
+        </a>
+        <a class="btn-dl btn-dl-ghost" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.2.7-3.87-1.54-3.87-1.54-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5z"/></svg>
+          <span class="btn-main">Star on GitHub</span>
+          <span class="btn-sub">MIT &middot; star the repo</span>
+        </a>
+      </div>
+      <p class="badges" aria-label="Free, MIT-licensed, local-first">
+        <span>Free</span><span class="dot" aria-hidden="true"></span>
+        <span>MIT-licensed</span><span class="dot" aria-hidden="true"></span>
+        <span>Local-first</span>
+      </p>
+      <!-- the concrete proof, surfaced in the hero: the headline 94% number
+           lands early, before any scrolling, as a small confident receipt. -->
+      <a class="hero-proof" href="#benchmark" aria-label="94 percent recall at 5 on the LongMemEval benchmark - see methodology">
+        <span class="hp-num">94<span class="hp-pct">%</span></span>
+        <span class="hp-copy">
+          <span class="hp-line">recall@5 on <b>LongMemEval</b></span>
+          <span class="hp-sub mono">470-question set &middot; 100% on-device</span>
+        </span>
+        <svg class="hp-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
       </a>
-      <a class="btn btn-mac" href="https://github.com/sirdath/NeuroVault/releases/latest" id="mac-download" aria-label="Download NeuroVault for Mac (Apple Silicon)">
-        <span class="btn-mac-sheen" aria-hidden="true"></span>
-        <svg class="btn-icon btn-icon-apple" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.45 2.23-1.18 3.03-.79.86-2.06 1.53-3.13 1.45-.13-1.12.42-2.27 1.16-3.03.83-.85 2.21-1.49 3.15-1.45zM20.57 17.5c-.55 1.27-.81 1.83-1.52 2.95-.99 1.56-2.39 3.51-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.78-4.04-3.34-2.78-4.36-3.07-9.48-1.36-12.2 1.22-1.94 3.13-3.07 4.93-3.07 1.83 0 2.98 1 4.49 1 1.46 0 2.35-1 4.47-1 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.73 9.73z"/></svg>
-        <span id="mac-label">Download for Mac</span>
-        <span class="btn-sub" id="mac-sub">Apple Silicon (M1–M4) · DMG · ~23 MB</span>
-      </a>
-      <a class="btn btn-secondary" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
-        <span>View on GitHub</span>
-        <span class="btn-sub">MIT · star the repo</span>
-      </a>
-    </div>
-
-    <div class="hero-alt">
-      <span class="hero-alt-label">Other platforms</span>
-      <a id="intel-mac-hint" href="https://github.com/sirdath/NeuroVault#for-developers" class="hero-alt-link" hidden>On an Intel Mac? Build from source ↗</a>
-      <a href="#" class="hero-alt-link is-disabled" title="Linux build not yet published">Linux · coming soon</a>
-      <a href="https://github.com/sirdath/NeuroVault#for-developers" class="hero-alt-link">Build from source ↗</a>
-    </div>
-    <!-- The #1 install blocker: macOS quarantines unsigned downloads with a
-         scary "damaged" alert. The README explains it; surface it here too,
-         because most people download from this page and never see the README. -->
-    <p class="hero-install-note">
-      macOS says <em>"NeuroVault is damaged"</em>? It's the missing Apple
-      certificate (we're open-source), not malware — drag the app to
-      Applications, then run
-      <code>xattr&nbsp;-dr&nbsp;com.apple.quarantine&nbsp;/Applications/NeuroVault.app</code>
-      once, or right-click → Open.
-      <a href="https://github.com/sirdath/NeuroVault#first-launch--clearing-the-os-warning" target="_blank" rel="noopener">Details ↗</a>
-    </p>
-
-    <!-- Metric badges -->
-    <div class="hero-stats">
-      <div class="stat">
-        <div class="stat-num">94<span class="stat-unit">%</span></div>
-        <div class="stat-label">hit@5 · LongMemEval<br/>full 470-question run</div>
+      <div class="term-lead" aria-hidden="true">
+        <span class="tl-eyebrow mono">See it work</span>
+        <span class="tl-rule"></span>
       </div>
-      <div class="stat">
-        <div class="stat-num">118<span class="stat-unit"> ms</span></div>
-        <div class="stat-label">recall over 120k-token<br/>haystacks — zero cloud</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">23<span class="stat-unit"> MB</span></div>
-        <div class="stat-label">macOS DMG<br/>download</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">1<span class="stat-unit">-click</span></div>
-        <div class="stat-label">install<br/>&amp; Claude integration</div>
+      <div class="term" role="img" aria-label="Terminal demo: install NeuroVault, connect a coding agent over MCP, then remember a fact and recall it across a brand-new session.">
+        <div class="term-head" aria-hidden="true">
+          <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
+          <span class="term-title">neurovault - agent session</span>
+        </div>
+        <div class="term-body" id="termBody" aria-hidden="true"></div>
       </div>
     </div>
   </div>
-</section>
-
-<!-- Up and running in seconds -->
-<section class="quickstart" aria-label="Get started in the terminal">
-  <div class="quickstart-inner reveal">
-    <div class="section-kicker">UP AND RUNNING IN SECONDS</div>
-    <h2 class="section-title">One download. One line. It remembers.</h2>
-    <div class="nv-terminal" role="img" aria-label="Terminal: install NeuroVault, connect your agent with one line, then remember and recall across sessions">
-      <div class="nv-term-bar">
-        <span class="nv-term-dot nv-term-dot--close"></span>
-        <span class="nv-term-dot nv-term-dot--min"></span>
-        <span class="nv-term-dot nv-term-dot--max"></span>
-        <span class="nv-term-title">neurovault — zsh</span>
-      </div>
-      <pre class="nv-term-body"><code id="nv-term-out"></code><span class="nv-term-cursor" aria-hidden="true"></span></pre>
-    </div>
+  <div class="scroll-cue" aria-hidden="true">
+    <span class="mouse"></span>
+    <span>scroll</span>
   </div>
-</section>
+  </section>
 
-<!-- Pitch -->
-<section class="pitch">
-  <div class="pitch-inner reveal">
-    <div class="section-kicker">THE PITCH</div>
-    <h2 class="pitch-title">
-      Most "agent memory" products are a RAG pipeline in a trench coat.<br/>
-      <span class="gradient-text">NeuroVault is a living wiki your agent can read, write, and challenge.</span>
-    </h2>
-    <p class="pitch-body">
-      Every memory is a plain <code>.md</code> file on your disk. The database is
-      just an index. If the index ever breaks, we rebuild it from the files.
-      You own your brain.
-    </p>
-  </div>
-</section>
+  <!-- transparent scroll distance: as it passes, the SAME sticky #brain canvas
+       scrubs the SAME nodes from the assembled logo into the constellation.
+       It renders nothing of its own. Collapsed under reduced motion. -->
+  <div class="morph-spacer" aria-hidden="true"></div>
+</div>
 
-<!-- Growth showcase — the thesis as motion. A dedicated canvas with
-     nothing on top: a brain building itself from a single seed, each new
-     memory wiring into the network. NVGrow runs here in loop mode. -->
-<section id="grow" class="grow-show">
+<!-- ===================== PROBLEM ===================== -->
+<section class="section" id="problem" aria-labelledby="problem-title">
   <div class="section-head reveal">
-    <div class="section-kicker">YOUR SECOND BRAIN, FORMING</div>
-    <h2 class="section-title">One memory. Then it connects everything.</h2>
-    <p class="section-lede">
-      Every note, decision, person, and project becomes a node. Each one
-      wires to what it relates to — until the shape of how you think is
-      something you can actually see.
-    </p>
+    <p class="kicker"><span class="tick" aria-hidden="true"></span>The problem</p>
+    <h2 class="sec-title" id="problem-title">Your agent starts from <span class="grad">zero</span>, every single time.</h2>
+    <p class="sec-lede">You keep compensating - and the workarounds cost you more than they save.</p>
   </div>
-  <div class="grow-stage reveal" role="img" aria-label="An animated knowledge graph growing outward from a single central node — each new node appears and connects to the network with a line, branching from the middle to the edges.">
-    <canvas id="nv-grow-show" class="grow-canvas" aria-hidden="true"></canvas>
-    <div class="grow-stage-glow" aria-hidden="true"></div>
-  </div>
-</section>
-
-<!-- Why it's different — the "old way" vs NeuroVault. The single clearest
-     way to explain the value: a side-by-side contrast. -->
-<section id="why" class="compare">
-  <div class="section-head reveal">
-    <div class="section-kicker">WHY IT'S DIFFERENT</div>
-    <h2 class="section-title">Stop re-explaining yourself.</h2>
-    <p class="section-lede">Every new session, your agent forgets. So you compensate — and the workarounds cost you more context than they save.</p>
-  </div>
-  <div class="compare-grid reveal">
-    <div class="compare-col compare-bad">
-      <h3>The old way</h3>
-      <ul class="compare-list">
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Re-explain your stack, your preferences, your decisions — every single session.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Cram everything into a 22k-token <code>CLAUDE.md</code> that bloats every prompt — and still goes stale.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Past chats vanish the moment you close the window. The agent starts from zero.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span>Your "memory" lives in one vendor's cloud, in a format you can't read or move.</span></li>
-      </ul>
-    </div>
-    <div class="compare-col compare-good">
-      <h3>With NeuroVault</h3>
-      <ul class="compare-list">
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Say it <strong>once</strong>. Any MCP agent recalls it the moment it's relevant.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Recall returns the handful of passages that <strong>actually matter</strong> — not the whole file.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Notes, decisions, people, projects persist across every session and every agent.</span></li>
-        <li><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>Plain markdown on your disk. <strong>Yours forever</strong>, readable in any editor.</span></li>
-      </ul>
-    </div>
+  <div class="problem-grid">
+    <article class="card reveal">
+      <span class="card-num mono">01</span>
+      <span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></span>
+      <h3>CLAUDE.md bloat</h3>
+      <p>You cram everything into a 22k-token <code>CLAUDE.md</code> that bloats every prompt - and still goes stale.</p>
+    </article>
+    <article class="card reveal">
+      <span class="card-num mono">02</span>
+      <span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="m9 9 6 6M15 9l-6 6"/></svg></span>
+      <h3>Chats vanish</h3>
+      <p>Past chats disappear the moment you close the window. The agent starts from zero every time.</p>
+    </article>
+    <article class="card reveal">
+      <span class="card-num mono">03</span>
+      <span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/><path d="M10 12v3"/></svg></span>
+      <h3>Vendor-locked memory</h3>
+      <p>Your "memory" lives in one vendor's cloud, in a format you can't read, move, or own.</p>
+    </article>
   </div>
 </section>
 
-<!-- Graphify — the flagship. CODE × LOCAL × VISUAL. Parses your repo
-     on-device with tree-sitter into a knowledge graph your agent can
-     reason over. -->
-<section id="graphify" class="graphify">
-  <div class="section-head reveal">
-    <div class="section-kicker">THE FLAGSHIP</div>
-    <h2 class="section-title">Point it at your codebase. <span class="gradient-text">Watch it become a graph.</span></h2>
-    <p class="section-lede">
-      Graphify parses your repo on-device with tree-sitter and builds a
-      living graph of every symbol, import, and call. Now your agent reasons
-      about your code's <em>structure</em> — not just greps its text. No
-      source ever leaves your machine.
-    </p>
+<!-- ===================== RECALL (constellation pulse) ===================== -->
+<section class="section" id="recall" aria-labelledby="recall-title">
+  <div class="recall-grid">
+    <div class="recall-copy">
+      <div class="section-head reveal" style="margin-bottom:0">
+        <p class="kicker"><span class="tick" aria-hidden="true"></span>How recall works</p>
+        <h2 class="sec-title" id="recall-title">One sweep. The <span class="grad">passages that matter.</span></h2>
+        <p class="sec-lede">Recall doesn't keyword-match and hand you the whole file. A single query fires through the whole synapse web and lights up only what's relevant - then returns the handful of passages, not the haystack.</p>
+      </div>
+      <div class="pipe-list reveal">
+        <div class="pipe-row">
+          <span class="pipe-tag mono">semantic</span>
+          <p><b>sqlite-vec</b> finds what you <em>meant</em> - even when no keyword matches the way you phrased it years ago.</p>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-tag mono">BM25</span>
+          <p><b>Keyword</b> precision catches exact names, IDs, and rare terms semantic search glosses over.</p>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-tag mono">graph</span>
+          <p>The <b>entity knowledge graph</b> pulls in connected notes - the neighbourhood around a hit.</p>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-tag mono">RRF + rerank</span>
+          <p>All three are <b>fused via RRF</b> and reranked by a cross-encoder, so the best passage rises to the top.</p>
+        </div>
+      </div>
+    </div>
+    <div class="recall-canvas-wrap" aria-hidden="true">
+      <div class="recall-halo"></div>
+      <canvas id="recallCanvas" aria-hidden="true"></canvas>
+    </div>
   </div>
+</section>
 
+<!-- ===================== GRAPHIFY ===================== -->
+<section class="section" id="graphify" aria-labelledby="graphify-title">
+  <div class="section-head reveal">
+    <p class="kicker"><span class="tick" aria-hidden="true"></span>Code-aware memory</p>
+    <h2 class="sec-title" id="graphify-title">Point it at your repo. <span class="grad">Watch it become a graph.</span></h2>
+    <p class="sec-lede">Graphify parses your codebase on-device with tree-sitter into a living graph of every symbol, import, and call. Now your agent reasons about your code's <strong>structure</strong> - not just greps its text. No source ever leaves your machine.</p>
+  </div>
   <div class="gfy-stats reveal">
-    <div class="gfy-stat"><strong>8</strong><span>languages</span></div>
     <div class="gfy-stat"><strong>1,887</strong><span>files in 8.4s</span></div>
+    <div class="gfy-stat"><strong>8</strong><span>languages</span></div>
     <div class="gfy-stat"><strong>100%</strong><span>on-device</span></div>
     <div class="gfy-stat"><strong>0</strong><span>API keys</span></div>
   </div>
-
   <div class="gfy-tools reveal">
-    <article class="gfy-tool">
-      <code>where_defined</code>
-      <p>Jump straight to where any symbol is declared — across the whole repo.</p>
-    </article>
-    <article class="gfy-tool">
-      <code>who_calls</code>
-      <p>Every caller of a function or method, so the agent traces real usage.</p>
-    </article>
-    <article class="gfy-tool gfy-tool--hot">
-      <code>blast_radius</code>
-      <p>Change this and what breaks? The transitive set of everything that depends on it.</p>
-    </article>
-    <article class="gfy-tool">
-      <code>whats_in_file</code>
-      <p>The symbols and signatures in any file — a structured table of contents.</p>
-    </article>
-    <article class="gfy-tool">
-      <code>fuse</code>
-      <p>Link a decision or wiki note to the code it governs — memory meets source.</p>
-    </article>
+    <article class="gfy-tool"><code>where_defined</code><p>Jump straight to where any symbol is declared - across the whole repo.</p></article>
+    <article class="gfy-tool"><code>who_calls</code><p>Every caller of a function or method, so the agent traces real usage.</p></article>
+    <article class="gfy-tool gfy-tool--hot"><code>blast_radius</code><p>Change this and what breaks? The transitive set of everything that depends on it.</p></article>
+    <article class="gfy-tool"><code>whats_in_file</code><p>The symbols and signatures in any file - a structured table of contents.</p></article>
   </div>
-
-  <p class="gfy-langs reveal">
+  <p class="gfy-langs reveal" aria-label="Supported languages">
     <span>Rust</span><span>Python</span><span>TypeScript</span><span>TSX</span><span>Go</span><span>Java</span><span>C#</span><span>Ruby</span>
   </p>
 </section>
 
-<!-- Benchmarks — our number, our receipts. Single-focus: state what we
-     score on a hard public benchmark and how it's measured. No comparisons,
-     no competitors — just a confident, reproducible result. -->
-<section id="benchmarks" class="bench">
+<!-- ===================== BENCHMARK ===================== -->
+<section class="section bench" id="benchmark" aria-labelledby="benchmark-title">
   <div class="section-head reveal">
-    <div class="section-kicker">BENCHMARKED IN THE OPEN</div>
-    <h2 class="section-title">94% recall on one of the hardest memory benchmarks there is.</h2>
-    <p class="section-lede">
-      LongMemEval is brutal — long multi-session histories, facts that get
-      updated and contradicted, questions that need temporal reasoning.
-      Across the full 470-question set, NeuroVault surfaces the right memory in
-      its top 5 results <strong>93.8%</strong> of the time, and in the top 10
-      <strong>98.1%</strong> of the time — running entirely on your machine.
-      Every number reproduces on your laptop with one command.
-    </p>
+    <p class="kicker"><span class="tick" aria-hidden="true"></span>Benchmarked in the open</p>
+    <h2 class="sec-title" id="benchmark-title">94% recall on one of the <span class="grad">hardest</span> memory benchmarks.</h2>
+    <p class="sec-lede">LongMemEval is brutal - long multi-session histories, facts that get updated and contradicted, questions that need temporal reasoning. Across the full 470-question set, NeuroVault's real <code>recall()</code> path surfaces the right memory, running entirely on your machine.</p>
   </div>
-
   <div class="bench-metrics reveal">
     <div class="bmetric bmetric--hot">
       <div class="bmetric-num">94<span>%</span></div>
-      <div class="bmetric-label">hit@5<br/><em>right memory in the top 5</em></div>
+      <div class="bmetric-label">hit@5<em>right memory in the top 5</em></div>
     </div>
     <div class="bmetric">
       <div class="bmetric-num">98<span>%</span></div>
-      <div class="bmetric-label">hit@10<br/><em>right memory in the top 10</em></div>
+      <div class="bmetric-label">hit@10<em>right memory in the top 10</em></div>
     </div>
     <div class="bmetric">
-      <div class="bmetric-num">118<span>ms</span></div>
-      <div class="bmetric-label">median query<br/><em>over a 120k-token haystack</em></div>
+      <div class="bmetric-num">120<span>k</span></div>
+      <div class="bmetric-label">token haystack<em>median query, zero cloud</em></div>
     </div>
     <div class="bmetric">
       <div class="bmetric-num">100<span>%</span></div>
-      <div class="bmetric-label">on-device<br/><em>zero cloud · no API keys</em></div>
+      <div class="bmetric-label">on-device<em>no API keys</em></div>
     </div>
   </div>
-
   <p class="bench-foot reveal">
-    Measured on LongMemEval-S with NeuroVault's real <code>recall()</code> path —
-    the exact code your agent calls — using 100% on-device embeddings. The
-    stricter recall@5 (every gold passage, not just one) is published too:
-    <strong>0.861</strong>. The full harness and a per-question receipt for
-    every answer live in the repo.
-    <a href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md" target="_blank" rel="noopener">Full methodology, harness &amp; per-question receipts ↗</a>
+    Honest framing: this is <strong>retrieval recall</strong> - does the right memory land in the top results - not an end-to-end QA-leaderboard number. Measured on the full 470-question set with 100% on-device embeddings. The full harness and a per-question receipt for every answer are reproducible on your laptop.
+    <a href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md" target="_blank" rel="noopener">Full methodology, harness &amp; receipts</a>
   </p>
 </section>
 
-<!-- Features -->
-<section id="features" class="features">
-  <div class="section-head reveal">
-    <div class="section-kicker">WHAT YOU GET</div>
-    <h2 class="section-title">Memory that sticks.</h2>
+<!-- ===================== COORDINATION ===================== -->
+<section class="section" id="coordination" aria-labelledby="coord-title">
+  <div class="coord-grid">
+    <div class="coord-copy">
+      <div class="section-head reveal" style="margin-bottom:0">
+        <p class="kicker"><span class="tick" aria-hidden="true"></span>New &middot; Multi-agent coordination</p>
+        <h2 class="sec-title" id="coord-title">One shared brain. <span class="grad">Many agents.</span></h2>
+        <p class="sec-lede">Agents route work to each other and read their own inbox through a single local brain. Each gets its own view; none steps on another.</p>
+      </div>
+      <div class="coord-points reveal">
+        <div class="coord-point">
+          <span class="cp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div><h3>handoff</h3><p>An agent routes a task - with full context - straight to another agent's queue. No copy-paste, no lost thread.</p></div>
+        </div>
+        <div class="coord-point">
+          <span class="cp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+          <div><h3>agent_inbox</h3><p>Each agent reads only the work addressed to it - a private queue inside the shared memory.</p></div>
+        </div>
+        <div class="coord-point">
+          <span class="cp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
+          <div><h3>session_start(agent=X)</h3><p>Names the agent and scopes its view, so a fleet shares one brain without a shared identity.</p></div>
+        </div>
+      </div>
+      <p class="coord-tagline mono reveal">A coordination <b>substrate</b>, not an orchestrator - it never runs or schedules agents.</p>
+    </div>
+    <div class="handoff reveal" role="img" aria-label="Diagram: agent A and agent B both connect to one shared local brain. Agent A hands a task to the brain, which routes it to agent B's inbox; a packet animates along the path.">
+      <svg viewBox="0 0 460 320" fill="none" xmlns="http://www.w3.org/2000/svg" id="handoffSvg">
+        <defs>
+          <linearGradient id="hfBrainGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="var(--soft)" stop-opacity=".22"/>
+            <stop offset="1" stop-color="var(--primary)" stop-opacity=".10"/>
+          </linearGradient>
+        </defs>
+
+        <!-- edges -->
+        <path class="hf-edge" id="edgeA" d="M120 78 C 200 78, 200 150, 230 150"/>
+        <path class="hf-edge" id="edgeB" d="M230 170 C 200 240, 200 242, 120 242"/>
+        <path class="hf-edge" d="M340 78 C 270 78, 270 150, 230 150" opacity=".4"/>
+        <path class="hf-edge" d="M230 170 C 270 242, 270 242, 340 242" opacity=".4"/>
+
+        <!-- shared brain (center) -->
+        <g class="hf-brain">
+          <rect x="186" y="120" width="88" height="60" rx="13"/>
+        </g>
+        <text class="hf-label" x="230" y="146" text-anchor="middle">shared brain</text>
+        <text class="hf-sub" x="230" y="162" text-anchor="middle">127.0.0.1:8765</text>
+
+        <!-- agent A -->
+        <g class="hf-node"><rect x="40" y="50" width="100" height="56" rx="12"/></g>
+        <text class="hf-label" x="90" y="76" text-anchor="middle">agent A</text>
+        <text class="hf-sub" x="90" y="90" text-anchor="middle">claude-code</text>
+
+        <!-- agent B (inbox) -->
+        <g class="hf-node"><rect x="40" y="214" width="100" height="56" rx="12"/></g>
+        <text class="hf-label" x="90" y="240" text-anchor="middle">agent B</text>
+        <text class="hf-sub" x="90" y="254" text-anchor="middle">inbox</text>
+
+        <!-- agent C -->
+        <g class="hf-node"><rect x="340" y="50" width="80" height="56" rx="12" opacity=".7"/></g>
+        <text class="hf-label" x="380" y="83" text-anchor="middle" opacity=".7">agent C</text>
+
+        <!-- agent D -->
+        <g class="hf-node"><rect x="340" y="214" width="80" height="56" rx="12" opacity=".7"/></g>
+        <text class="hf-label" x="380" y="247" text-anchor="middle" opacity=".7">agent D</text>
+
+        <!-- animated packet -->
+        <circle class="hf-packet" id="hfPacket" r="4" cx="120" cy="78"/>
+      </svg>
+    </div>
   </div>
-
-  <div class="feature-grid">
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
-      <h3>Never leaves your laptop</h3>
-      <p>No cloud, no account, no telemetry — just plain markdown files on your
-        disk. The backend binds to loopback only and refuses outside connections.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-      <h3>See how you think</h3>
-      <p>Every note is a node in a live, force-directed graph. Analytics mode
-        sizes nodes by influence (PageRank) and tints clusters of linked ideas
-        (Louvain), so the shape of your knowledge is visible at a glance.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <h3>Recall that thinks like you do</h3>
-      <p>Hybrid search fuses semantic, keyword, and graph hits, reranks them, and
-        weights by recency — so recall surfaces what you meant, not just what
-        you literally typed.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
-      <h3>Write without friction</h3>
-      <p>Live preview, <code>[[wikilinks]]</code>, a <code>&#8984;K</code> command
-        palette, VS Code-style tabs, and 7 themes. It behaves like the editor you
-        already use all day.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg></span>
-      <h3>AI does the busywork &mdash; in your session</h3>
-      <p>Claude drafts wiki pages from your raw notes and names your clusters,
-        running in the Claude / Cursor session you already have open via MCP.
-        No API keys. Every change is a diff you approve.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>
-      <h3>Works with your agent &mdash; zero setup</h3>
-      <p>One click writes NeuroVault's MCP entry into <code>~/.claude.json</code>
-        (your login untouched). The agent auto-starts the backend on first use —
-        no "is the server running?". Just <code>recall()</code>.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg></span>
-      <h3>A brain per context</h3>
-      <p>Work, research, personal — switch brains with one keystroke,
-        Obsidian-compatible. Opt a project folder into its own brain with a
-        <code>.neurovault</code> file; each codebase gets memory scoped to itself.</p>
-    </article>
-
-    <article class="feature reveal">
-      <span class="feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="13" y="13" width="6" height="4" rx="1"/></svg></span>
-      <h3>A widget, not a window</h3>
-      <p>A tiny floating control parks in the corner: backend status, start /
-        pause, open the app. Shrink it to just the logo, or hide it entirely.</p>
-    </article>
-
-  </div> <!-- /.feature-grid -->
 </section>
 
-<!-- Use cases — researched, real workflows people run. The "what would I
-     actually do with this?" section: lead with the broadly-relatable ones. -->
-<section id="use-cases" class="usecases">
-  <div class="section-head reveal">
-    <div class="section-kicker">ONE BRAIN, COUNTLESS USES</div>
-    <h2 class="section-title">What can you use NeuroVault for?</h2>
-    <p class="section-lede">
-      Anything you'd keep in notes, NeuroVault makes <em>askable</em> — and
-      because it's all on your machine, even the private, proprietary, and
-      privileged stuff is fair game.
-    </p>
+<!-- ===================== CONFIDENCE ===================== -->
+<section class="section" id="confidence" aria-labelledby="conf-title">
+  <div class="conf-grid">
+    <div class="conf-copy">
+      <div class="section-head reveal" style="margin-bottom:0">
+        <p class="kicker"><span class="tick" aria-hidden="true"></span>New &middot; Confidence on recall</p>
+        <h2 class="sec-title" id="conf-title">Every fact carries a <span class="grad">trust signal.</span></h2>
+        <p class="sec-lede">Relevance tells the agent a fact <em>matches</em> the query. Confidence tells it whether to <strong>rely on it</strong> - a separate 0-1 signal, especially for facts written by other agents. Computed structurally. Zero LLM at recall time.</p>
+      </div>
+    </div>
+    <div class="conf-demo reveal" role="img" aria-label="Three recalled facts, each with its own trust score: 0.96, 0.81, and 0.42 - distinct from how well each matches the query.">
+      <div class="conf-row">
+        <div class="conf-fact">
+          <div class="ftxt">Deploys ship on Fridays, never Mondays.</div>
+          <div class="fmeta mono">you &middot; confirmed twice &middot; recent</div>
+        </div>
+        <div class="conf-meter">
+          <div class="conf-bar"><div class="conf-fill" style="--v:.96"></div></div>
+          <div class="conf-score mono">0.96</div>
+        </div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-fact">
+          <div class="ftxt">Auth uses short-lived JWTs in the gateway.</div>
+          <div class="fmeta mono">agent B &middot; single source</div>
+        </div>
+        <div class="conf-meter">
+          <div class="conf-bar"><div class="conf-fill" style="--v:.81"></div></div>
+          <div class="conf-score mono">0.81</div>
+        </div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-fact">
+          <div class="ftxt">Staging may still point at the old DB host.</div>
+          <div class="fmeta mono">agent D &middot; unverified &middot; stale</div>
+        </div>
+        <div class="conf-meter">
+          <div class="conf-bar"><div class="conf-fill" style="--v:.42"></div></div>
+          <div class="conf-score mono">0.42</div>
+        </div>
+      </div>
+      <div class="conf-legend mono" aria-hidden="true">
+        <span><i class="rel"></i>relevance - matches the query</span>
+        <span><i class="tru"></i>trust - how much to rely on it</span>
+      </div>
+    </div>
   </div>
-
-  <div class="uc-grid reveal">
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🔎</span>
-      <h3>Ask your own notes</h3>
-      <p>Thousands of notes, but search can't find what you phrased differently years ago. Ask in plain language and get the actual passage back — even when no keyword matches.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">📁</span>
-      <h3>Organize a folder of work</h3>
-      <p>Point NeuroVault at any folder of markdown and it builds a searchable brain in minutes. Recall finds the right note by what you <em>meant</em>, not the words you typed.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🧩</span>
-      <h3>Your codebase as a brain</h3>
-      <p>Run <code>graphify</code> on any repo for an on-device code knowledge graph, then ask <code>where_defined</code>, <code>who_calls</code>, or <code>blast_radius</code> before you refactor. Source never leaves the machine.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🎓</span>
-      <h3>Write a dissertation</h3>
-      <p>Build a linked web of literature notes across years of work. The graph and semantic recall surface every note on a theme across chapters — and reveal where two sources disagree.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">📔</span>
-      <h3>A journal that answers back</h3>
-      <p>Ask your diary when your anxious entries cluster, or what you said last time you felt burned out. The embeddings and retrieval run entirely on-device — nothing reaches a cloud LLM.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🧠</span>
-      <h3>Give Claude a memory of you</h3>
-      <p>Save your preferences, decisions, and context once as markdown you own. Every session your agent recalls it over MCP — across Claude, Cursor, and Codex, not locked to one vendor.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🔒</span>
-      <h3>A confidential client brain</h3>
-      <p>Even Obsidian-plus-AI ships your note text to a cloud LLM. NeuroVault keeps the files <em>and</em> the search local — so lawyers, accountants, and therapists can ask about privileged notes with nothing leaving the device.</p>
-    </article>
-    <article class="uc-card">
-      <span class="uc-ic" aria-hidden="true">🤖</span>
-      <h3>Keep your coding agent grounded</h3>
-      <p>Save the repo layout, auth flow, and why-we-did-X once; the next session recalls them instead of inventing wrong file paths. Per-project brains keep one repo's context out of another's.</p>
-    </article>
-  </div>
-
-  <p class="uc-scale reveal">
-    <strong>And it scales with you.</strong> Add as many notes as you want —
-    your vault is plain markdown (10,000 notes is only ~130&nbsp;MB), the
-    database is a lightweight rebuildable cache over it, and recall stays in the
-    low&#8209;hundreds of milliseconds even on a big brain.
-  </p>
 </section>
 
-<!-- MCP tools + tiers — concrete proof of how deeply it plugs into the
-     agent. 54 tools, gated so the agent loads only the slice it needs. -->
-<section id="mcp" class="mcp">
+<!-- ===================== LOCAL ===================== -->
+<section class="section local" id="privacy" aria-labelledby="privacy-title">
   <div class="section-head reveal">
-    <div class="section-kicker">PLUGS INTO YOUR AGENT</div>
-    <h2 class="section-title">54 tools. Your agent loads only what it needs.</h2>
-    <p class="section-lede">
-      NeuroVault speaks MCP, so Claude Code, Claude Desktop, Cursor, and
-      Codex all read and write the same brain. Tools are grouped into tiers —
-      pick a slice, not the kitchen sink. Switch any time in Settings.
-    </p>
+    <p class="kicker"><span class="tick" aria-hidden="true"></span>Data safety</p>
+    <h2 class="sec-title" id="privacy-title">100% local. <span class="grad">Actually.</span></h2>
+    <p class="sec-lede">Private by architecture, not a setting you switch on.</p>
+  </div>
+  <div class="local-list reveal">
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>No telemetry</h3><p>No analytics, no crash reporter, no phone-home on startup.</p></div>
+    </div>
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>No account</h3><p>There is no NeuroVault login to create or sign into.</p></div>
+    </div>
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>No cloud</h3><p>Your vault is a folder of markdown files. Back it up, sync it, or delete it however you like.</p></div>
+    </div>
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>Loopback only</h3><p>The backend binds to <code>127.0.0.1:8765</code> and refuses connections from other machines.</p></div>
+    </div>
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>No API keys</h3><p>NeuroVault never holds one. Embeddings run on-device with BGE-small ONNX.</p></div>
+    </div>
+    <div class="local-item">
+      <span class="lk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <div><h3>Network on request</h3><p>The only outbound call by default: downloading the embedding model on first run.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TIERS ===================== -->
+<section class="section" id="tools" aria-labelledby="tools-title">
+  <div class="section-head reveal">
+    <p class="kicker"><span class="tick" aria-hidden="true"></span>Plugs into your agent</p>
+    <h2 class="sec-title" id="tools-title">54 MCP tools. <span class="grad">Your agent loads only what it needs.</span></h2>
+    <p class="sec-lede">NeuroVault speaks MCP, so Claude Code, Claude Desktop, Cursor, and Codex all read and write the same brain. Tools are grouped into tiers - pick a slice, not the kitchen sink.</p>
   </div>
   <div class="tier-grid reveal">
     <article class="tier">
-      <div class="tier-head"><h3>minimal</h3><span class="tier-n">3</span></div>
-      <p><code>recall</code> · <code>related</code> · <code>session_start</code></p>
+      <div class="tier-head"><h3>minimal</h3><span class="tier-n mono">3</span></div>
+      <p><code>recall</code> &middot; <code>related</code> &middot; <code>session_start</code></p>
       <span class="tier-tag">read-only</span>
     </article>
     <article class="tier tier--default">
-      <div class="tier-head"><h3>lite</h3><span class="tier-n">8</span></div>
-      <p>+ <code>remember</code> · <code>status</code> · <code>switch_brain</code> · <code>update</code></p>
+      <div class="tier-head"><h3>lite</h3><span class="tier-n mono">8</span></div>
+      <p>+ <code>remember</code> &middot; <code>status</code> &middot; <code>switch_brain</code> &middot; <code>update</code></p>
       <span class="tier-tag">default</span>
     </article>
     <article class="tier">
-      <div class="tier-head"><h3>standard</h3><span class="tier-n">20</span></div>
-      <p>+ chunk &amp; temporal recall · duplicate check · core memory · history · agent <code>handoff</code> / <code>inbox</code></p>
+      <div class="tier-head"><h3>standard</h3><span class="tier-n mono">20</span></div>
+      <p>+ chunk &amp; temporal recall &middot; duplicate check &middot; core memory &middot; <code>handoff</code> / <code>inbox</code></p>
       <span class="tier-tag">power users</span>
     </article>
     <article class="tier">
-      <div class="tier-head"><h3>full</h3><span class="tier-n">54</span></div>
-      <p>+ <code>graphify</code> · maintenance · graph editing · contradictions · images</p>
+      <div class="tier-head"><h3>full</h3><span class="tier-n mono">54</span></div>
+      <p>+ <code>graphify</code> &middot; maintenance &middot; graph editing &middot; contradictions &middot; images</p>
       <span class="tier-tag">everything</span>
     </article>
   </div>
 </section>
 
-<!-- Screenshots -->
-<section class="screens">
-  <div class="section-head reveal">
-    <div class="section-kicker">SEE IT</div>
-    <h2 class="section-title">Every surface, customisable.</h2>
-  </div>
+</main>
 
-  <div class="screens-grid">
-    <figure class="screen reveal">
-      <div class="screen-frame">
-        <img src="./assets/screenshots/02-filter-panel.png" alt="NeuroVault graph view with the Filters panel open — sliders for node size, link thickness, layout shape, and time-lapse" loading="lazy" />
-      </div>
-      <figcaption>
-        <strong>Graph view + Filters panel.</strong>
-        Force-directed brain in the centre, orphan halo around it, full
-        Obsidian-style customisation panel on the right. Search, filter by
-        edge type, scale node size and link thickness, switch layout
-        shapes, retune the d3-force simulation, all live.
-      </figcaption>
-    </figure>
-
-    <figure class="screen reveal">
-      <div class="screen-frame">
-        <img src="./assets/screenshots/04-graph-semantic-on.png" alt="NeuroVault graph view with semantic edges enabled — every inferred relationship visible at once" loading="lazy" />
-      </div>
-      <figcaption>
-        <strong>Semantic edges on.</strong>
-        Toggle the inferred similarity layer back on and watch the brain
-        densify. <code>manual</code> wikilinks, <code>entity</code>
-        co-mentions, and <code>semantic</code> embedding matches each have
-        their own colour. Hide them by default to read the structure;
-        bring them back when you want the full neighbourhood.
-      </figcaption>
-    </figure>
-
-    <figure class="screen reveal">
-      <div class="screen-frame">
-        <img src="./assets/screenshots/07-palette.png" alt="NeuroVault command palette — commands, notes, and semantic memory in one prompt" loading="lazy" />
-      </div>
-      <figcaption>
-        <strong>Command palette.</strong>
-        <code>⌘K</code> is the primary nav verb. Three sections in one
-        palette — <em>Commands</em> (fuzzy), <em>Notes</em> (title search),
-        <em>Memory</em> (semantic recall after three characters).
-      </figcaption>
-    </figure>
-
-    <figure class="screen reveal">
-      <div class="screen-frame">
-        <img src="./assets/screenshots/08-compile-agent.png" alt="NeuroVault Compile tab with the agent compile flow expanded — topic, source pack, auto-approve toggle" loading="lazy" />
-      </div>
-      <figcaption>
-        <strong>Agent-driven compile.</strong>
-        Type a topic, hit Prepare. NeuroVault gathers every relevant
-        engram, hands the source pack to your agent. The agent writes a
-        canonical wiki page, you review and approve — or flip the
-        <code>auto-approve</code> toggle and let trusted compiles ship
-        straight to the vault.
-      </figcaption>
-    </figure>
-
-    <figure class="screen reveal">
-      <div class="screen-frame">
-        <img src="./assets/screenshots/05-tabs-context-menu.png" alt="NeuroVault Notes view with multiple tabs and right-click context menu — Close, Close others, Close all" loading="lazy" />
-      </div>
-      <figcaption>
-        <strong>VS Code-style note tabs.</strong>
-        Open as many notes as you like. Drag to reorder, middle-click to
-        close, right-click for Close / Close others / Close all. Behaves
-        like the editor you already use all day.
-      </figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- How it works -->
-<section id="how" class="how">
-  <div class="section-head reveal">
-    <div class="section-kicker">HOW IT WORKS</div>
-    <h2 class="section-title">Three paths to the same memory.</h2>
-  </div>
-
-  <div class="how-grid">
-    <div class="how-step reveal">
-      <div class="how-num">01</div>
-      <h3>You write a note</h3>
-      <p>Auto-saved as markdown. A file watcher triggers the ingestion pipeline —
-      chunk, embed locally, extract entities, update the knowledge graph.</p>
-    </div>
-    <div class="how-arrow" aria-hidden="true">→</div>
-    <div class="how-step reveal">
-      <div class="how-num">02</div>
-      <h3>You drop a fact in chat</h3>
-      <p>A UserPromptSubmit hook silently runs your message through an extractor.
-      Eight patterns catch preferences, decisions, deadlines, stacks.
-      Each fact becomes a first-class <code>kind='insight'</code> engram
-      with a wikilink back to where you said it.</p>
-    </div>
-    <div class="how-arrow" aria-hidden="true">→</div>
-    <div class="how-step reveal">
-      <div class="how-num">03</div>
-      <h3>The agent asks</h3>
-      <p>Claude calls <code>recall()</code> via MCP. Hybrid search fuses
-      semantic, keyword, and graph hits. Cross-encoder reranks the top
-      candidates; PageRank importance lifts hub notes when Analytics mode
-      is on. Answers now carry context they couldn't have had before.</p>
-    </div>
-  </div>
-</section>
-
-<!-- For teams — the expansion teaser. Same local-first architecture, now
-     shared through a private repo. Clearly marked as on the roadmap. -->
-<section id="teams" class="teams">
-  <div class="teams-inner reveal">
-    <div class="section-kicker">ON THE ROADMAP · FOR TEAMS</div>
-    <h2 class="section-title">A shared brain for your whole company.</h2>
-    <p class="teams-lede">
-      The same local-first engine, synced through a private Git repo you
-      already own. Drop in your meeting notes and decisions; NeuroVault turns
-      them into a knowledge graph every teammate's agent can recall — "what
-      did we promise Acme, and when?" answered with sources.
-    </p>
-    <ul class="teams-points">
-      <li><span class="privacy-dot"></span><span><strong>Your repo is the brain.</strong> No NeuroVault server, no third-party cloud — your private GitHub repo is the single source of truth.</span></li>
-      <li><span class="privacy-dot"></span><span><strong>Meeting notes in, graph out.</strong> Point it at your Granola / Otter / Notion exports; entities and decisions wire themselves together.</span></li>
-      <li><span class="privacy-dot"></span><span><strong>Everyone's agent, one memory.</strong> Each teammate runs it locally; the repo keeps every brain in sync.</span></li>
-    </ul>
-    <a class="teams-cta" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">
-      Star on GitHub for early access
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-    </a>
-  </div>
-</section>
-
-<!-- Privacy -->
-<section id="privacy" class="privacy">
-  <div class="privacy-inner reveal">
-    <div class="section-kicker">DATA SAFETY</div>
-    <h2 class="section-title">100% local. Actually.</h2>
-    <ul class="privacy-list">
-      <li><span class="privacy-dot"></span><strong>No telemetry.</strong> No analytics, no crash reporter, no phone-home on startup.</li>
-      <li><span class="privacy-dot"></span><strong>No account.</strong> There is no NeuroVault login to create or sign into.</li>
-      <li><span class="privacy-dot"></span><strong>No cloud sync.</strong> Your vault is a folder of markdown files. Back it up, sync it, or delete it however you want.</li>
-      <li><span class="privacy-dot"></span><strong>Loopback only.</strong> The desktop app's HTTP server binds to <code>127.0.0.1:8765</code>. It refuses connections from other machines.</li>
-      <li><span class="privacy-dot"></span><strong>No API keys.</strong> NeuroVault never holds one. Cluster naming, future deduplication and folder suggestions all delegate to whatever Claude / Cursor session you already have running, via MCP.</li>
-      <li><span class="privacy-dot"></span><strong>Network only on request.</strong> Downloading embedding models on first run. That's the only outbound call NeuroVault makes by default.</li>
-    </ul>
-  </div>
-</section>
-
-<!-- Final CTA -->
-<section class="cta">
-  <div class="cta-inner reveal">
-    <h2 class="cta-title">Give Claude a memory that survives the window close.</h2>
-    <div class="hero-ctas">
-      <a class="btn btn-primary" href="https://github.com/sirdath/NeuroVault/releases/latest">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span id="cta-label">Download for Windows</span>
-        <span class="btn-sub" id="cta-sub">Free · MIT-licensed</span>
+<!-- ===================== FINAL CTA ===================== -->
+<section class="final" id="get" aria-labelledby="final-title">
+  <div class="final-inner reveal">
+    <h2 id="final-title">Give your AI a memory that <span class="grad">survives the window close.</span></h2>
+    <p>Free. MIT-licensed. Runs entirely on your machine.</p>
+    <div class="cta">
+      <a class="btn-dl btn-dl-primary" id="cta-download" href="https://github.com/sirdath/NeuroVault/releases/latest">
+        <svg class="btn-icon btn-icon-win" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.1 10.2 4v7.4H3zM10.2 12.5V20L3 18.9v-6.4zM11.3 3.9 21 2.5v8.9h-9.7zM21 12.5v8.9l-9.7-1.4v-7.5z"/></svg>
+        <span class="btn-main" id="cta-label">Download for Windows</span>
+        <span class="btn-sub" id="cta-sub">Free &middot; MIT-licensed</span>
       </a>
-      <a class="btn btn-mac" href="https://github.com/sirdath/NeuroVault/releases/latest" id="cta-mac-download" aria-label="Download NeuroVault for Mac (Apple Silicon)">
+      <a class="btn-dl btn-dl-mac" id="cta-mac-download" href="https://github.com/sirdath/NeuroVault/releases/latest" aria-label="Download NeuroVault for Mac (Apple Silicon)">
         <span class="btn-mac-sheen" aria-hidden="true"></span>
         <svg class="btn-icon btn-icon-apple" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.45 2.23-1.18 3.03-.79.86-2.06 1.53-3.13 1.45-.13-1.12.42-2.27 1.16-3.03.83-.85 2.21-1.49 3.15-1.45zM20.57 17.5c-.55 1.27-.81 1.83-1.52 2.95-.99 1.56-2.39 3.51-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.78-4.04-3.34-2.78-4.36-3.07-9.48-1.36-12.2 1.22-1.94 3.13-3.07 4.93-3.07 1.83 0 2.98 1 4.49 1 1.46 0 2.35-1 4.47-1 1.61 0 3.31.88 4.52 2.4-3.97 2.18-3.32 7.85.73 9.73z"/></svg>
-        <span id="cta-mac-label">Download for Mac</span>
-        <span class="btn-sub" id="cta-mac-sub">Apple Silicon (M1 / M2 / M3 / M4) · DMG</span>
+        <span class="btn-main" id="cta-mac-label">Download for Mac</span>
+        <span class="btn-sub" id="cta-mac-sub">Apple Silicon (M1-M4) &middot; DMG</span>
       </a>
-      <a class="btn btn-secondary" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
-        <span>Star on GitHub</span>
-        <span class="btn-sub">★ open source</span>
+      <a class="btn-dl btn-dl-ghost" href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.2.7-3.87-1.54-3.87-1.54-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5z"/></svg>
+        <span class="btn-main">Star on GitHub</span>
+        <span class="btn-sub">MIT &middot; star the repo</span>
       </a>
     </div>
   </div>
 </section>
 
+<!-- ===================== FOOTER ===================== -->
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-brand">
-      <span class="footer-mark">▮</span>
-      <span>NeuroVault</span>
+      <span class="fm" aria-hidden="true">
+        <img src="assets/mark-dark.png" alt="" width="24" height="24" decoding="async">
+      </span>
+      NeuroVault
     </div>
-    <div class="footer-links">
-      <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">GitHub</a>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://github.com/sirdath/NeuroVault/releases/latest">Download Mac</a>
+      <a href="https://github.com/sirdath/NeuroVault/releases/latest">Download Windows</a>
+      <a href="https://github.com/sirdath/NeuroVault" target="_blank" rel="noopener">Star on GitHub</a>
       <a href="https://github.com/sirdath/NeuroVault/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
       <a href="https://github.com/sirdath/NeuroVault/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a>
       <a href="https://github.com/sirdath/NeuroVault/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-    </div>
-    <div class="footer-copy">© 2026 NeuroVault contributors · local-first AI memory ✻</div>
+    </nav>
+    <div class="footer-copy">&copy; 2026 NeuroVault contributors &middot; local-first AI memory.</div>
   </div>
 </footer>
 
-<div class="grain-overlay" aria-hidden="true"></div>
+<!-- Real NeuroVault logo node positions (499 points sampled from the mark) -->
+<script src="fx/nv-brain-points.js"></script>
 
-<script src="./script.js" defer></script>
-<script>window.addEventListener("DOMContentLoaded",function(){
-  // Hero backdrop: the NeuroVault mark assembled from nodes (logo shape).
-  if(window.NVBrain)NVBrain.init("#nv-brain");
-  // Dedicated showcase below: the graph grows from a seed and branches
-  // outward, loops so visitors watch it build. (Kept separate so the hero
-  // logo and the growth animation aren't the same effect twice.)
-  if(window.NVGrow)NVGrow.init("#nv-grow-show",{loop:true,density:5200,spawnEvery:70,hold:5200});
-});</script>
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
+  var REDUCE = reduceMQ.matches;
+  var hasGSAP = typeof window.gsap !== 'undefined';
+  if(hasGSAP && window.ScrollTrigger){ gsap.registerPlugin(ScrollTrigger); }
+  var root = document.documentElement;
+
+  /* =========================================================
+     THEME
+  ========================================================= */
+  var themeBtn = document.getElementById('themeBtn');
+  function metaTheme(t){
+    var m=document.querySelector('meta[name="theme-color"]');
+    if(m) m.setAttribute('content', t==='light' ? '#f5f8fd' : '#0b0b12');
+  }
+  function setTheme(t){
+    root.setAttribute('data-theme', t);
+    themeBtn.setAttribute('aria-pressed', t==='light'?'true':'false');
+    metaTheme(t);
+    try{ localStorage.setItem('nv-theme', t); }catch(e){}
+    // recolor every canvas (the hero brain now also drives the morph)
+    if(window.__heroBrain)   window.__heroBrain.recolor();
+    if(window.__heroDust)    window.__heroDust.recolor();
+    if(window.__recall)      window.__recall.recolor();
+  }
+  (function initTheme(){
+    var saved=null; try{ saved=localStorage.getItem('nv-theme'); }catch(e){}
+    if(saved){ root.setAttribute('data-theme',saved); }
+    themeBtn.setAttribute('aria-pressed', root.getAttribute('data-theme')==='light'?'true':'false');
+    metaTheme(root.getAttribute('data-theme'));
+  })();
+  themeBtn.addEventListener('click', function(){
+    setTheme(root.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+  });
+
+  /* Download buttons are two distinct, always-on platforms - a branded blue
+     "Download for Windows" primary and a frosted glass "Download for Mac"
+     sibling - so they never collapse into two identical labels. No OS sniff,
+     no network: the realistic look is the whole point, not the detection. */
+
+  /* =========================================================
+     COLOR HELPERS (read from CSS vars)
+  ========================================================= */
+  function cssVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+  function parseColor(str){
+    str=(str||'').trim();
+    if(str[0]==='#'){
+      var h=str.slice(1);
+      if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16),a:1};
+    }
+    var m=str.match(/rgba?\(([^)]+)\)/);
+    if(m){ var p=m[1].split(',').map(function(x){return parseFloat(x);});
+      return {r:p[0],g:p[1],b:p[2],a:p[3]===undefined?1:p[3]}; }
+    return {r:127,g:176,b:255,a:1};
+  }
+  function rgba(c,a){ return 'rgba('+(c.r|0)+','+(c.g|0)+','+(c.b|0)+','+(a===undefined?c.a:a)+')'; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t, a:1}; }
+
+  /* =========================================================
+     HERO - the REAL NeuroVault mark, built from logo nodes.
+     499 points sampled from the actual logo (NV_BRAIN_POINTS):
+     each carries t:"brain" (left half) or t:"vault" (right half).
+     The nodes fly in from a scatter and lock into the recognizable
+     brain+vault mark; near nodes wire up into synapse links; the
+     cursor leans + fires nearby nodes; one signature recall pulse
+     on lock lights the terminal. Two brand blues keep the split
+     brain/vault identity. Reduced-motion settles to a static mark.
+  ========================================================= */
+  (function heroLogo(){
+    var canvas=document.getElementById('brain');
+    if(!canvas) return;
+    var PTS=window.NV_BRAIN_POINTS;
+    if(!PTS||!PTS.length){ canvas.style.opacity=0; return; }
+    var ctx=canvas.getContext('2d');
+    var DPR=Math.min(window.devicePixelRatio||1,2);
+    var W=0,H=0,S=0,ox=0,oy=0,spread=0;
+    var nodes=[],edges=[],graphEdges=[],pulses=[],waves=[];
+    var pointer={x:-9999,y:-9999,active:false};
+    var COL={};
+    /* form 0->1 is the one-time fly-in + lock; locked latches the recall
+       pulse + terminal handshake exactly once. */
+    var form=REDUCE?1:0, locked=REDUCE, formStart=0, t0=performance.now(), rafId=null;
+    var FORM_MS=1500;
+    /* morph 0 -> assembled logo, 1 -> sprawling constellation. Scroll-scrubbed
+       by the .morph-spacer below the hero. morphVis fades the morph contribution
+       in/out so the graph never bleeds over the Problem section. The SAME nodes
+       carry both states, so this is one continuous instance, not a hand-off. */
+    var morph=0, morphVis=0;
+    var seededRng=(function(){var a=0x4e56>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};})();
+
+    function recolor(){
+      COL.brain=parseColor(cssVar('--primary'));   /* solid bright blue - the brain half */
+      COL.vault=parseColor(cssVar('--soft'));       /* lighter blue - the vault half */
+      COL.vaultLite=parseColor(cssVar('--node-core'));
+      COL.pulse=parseColor(cssVar('--pulse'));
+      COL.isLight=root.getAttribute('data-theme')==='light';
+    }
+    recolor();
+
+    function placement(){
+      /* the mark is square; place + scale it like the old brain - large, set
+         to the right, drifting up on small screens so the copy stays clear. */
+      var size,cx,cy;
+      if(W>=980){ size=Math.min(W*0.46,H*0.82,560); cx=W*0.70; cy=H*0.50; }
+      else if(W>=640){ size=Math.min(W*0.62,H*0.7,460); cx=W*0.64; cy=H*0.46; }
+      else{ size=Math.min(W*0.92,H*0.5,400); cx=W*0.52; cy=H*0.34; }
+      S=size; ox=cx-S/2; oy=cy-S/2;
+    }
+
+    function homeOf(i){ return {x:ox+PTS[i].x*S, y:oy+PTS[i].y*S}; }
+
+    function build(){
+      placement();
+      var mcx=ox+S*0.5, mcy=oy+S*0.5;
+      /* the constellation reaches wider than the mark; clamp to the viewport so
+         it never overflows on narrow screens. */
+      spread=Math.min(S*1.95, Math.min(W,H)*0.92);
+      seededRng=(function(){var a=0x4e56>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};})();
+      var rng=seededRng;
+      nodes=PTS.map(function(p,i){
+        var h=homeOf(i);
+        /* scattered start: radiate out from the mark center along the node's
+           own angle, so the fly-in reads as the mark assembling itself. */
+        var ang=Math.atan2(h.y-mcy,h.x-mcx)+(Math.random()-0.5)*0.8;
+        var sd=(0.8+Math.random()*1.3);
+        /* graph target: push the node outward along a type-biased angle so the
+           two halves fan into distinct lobes of one connected graph, with a
+           seeded organic radius -> a living constellation, not a ring or a
+           random scatter. Identical math to the old morph clone, now on these
+           same node objects. */
+        var baseAng=Math.atan2(h.y-mcy,(h.x-mcx)||0.0001);
+        var bias=(p.t==='brain')? Math.PI*0.92 : Math.PI*(-0.08);
+        var gang=baseAng*0.45 + bias + (rng()-0.5)*1.5;
+        var baseR=Math.hypot(h.x-mcx,h.y-mcy)/(S*0.5||1);
+        var grad=spread*(0.30+0.55*baseR+rng()*0.42);
+        var gx=mcx+Math.cos(gang)*grad*0.62;
+        var gy=mcy+Math.sin(gang)*grad*0.74 + (p.t==='brain'?-spread*0.06:spread*0.06);
+        return {
+          hx:h.x, hy:h.y,
+          sx:h.x+Math.cos(ang)*S*sd*0.9, sy:h.y+Math.sin(ang)*S*sd*0.95,
+          gx:gx, gy:gy,
+          x:0, y:0,
+          t:p.t,
+          delay:Math.random()*0.4,
+          tw:Math.random()*Math.PI*2,
+          spd:0.12+Math.random()*0.16,
+          amp:1.4+Math.random()*2.6,
+          gamp:2.0+rng()*4.0
+        };
+      });
+      nodes.forEach(function(n){ n.x=REDUCE?n.hx:n.sx; n.y=REDUCE?n.hy:n.sy; });
+      edges=buildEdges(function(n){return [n.hx,n.hy];}, S*0.085, 3);
+      graphEdges=buildEdges(function(n){return [n.gx,n.gy];}, spread*0.16, 3);
+      if(!REDUCE && locked) seedPulses();
+    }
+
+    /* grid-bucketed k-nearest synapse links over a chosen coordinate accessor.
+       Used for BOTH the tight logo wiring and the wider graph wiring, so the
+       two link sets cross-fade through the morph on one node array. */
+    function buildEdges(coord, maxD, K){
+      var out=[], maxD2=maxD*maxD, cell=Math.max(18,maxD), grid={};
+      function key(a,b){return a+'_'+b;}
+      var P=nodes.map(coord);
+      for(var i=0;i<P.length;i++){
+        var gx=Math.floor(P[i][0]/cell), gy=Math.floor(P[i][1]/cell);
+        (grid[key(gx,gy)]||(grid[key(gx,gy)]=[])).push(i);
+      }
+      var seen={};
+      for(var i2=0;i2<P.length;i2++){
+        var gx2=Math.floor(P[i2][0]/cell), gy2=Math.floor(P[i2][1]/cell), cand=[];
+        for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){
+          var b=grid[key(gx2+dx,gy2+dy)]; if(!b)continue;
+          for(var bi=0;bi<b.length;bi++){
+            var j=b[bi]; if(j===i2)continue;
+            var ddx=P[i2][0]-P[j][0], ddy=P[i2][1]-P[j][1], d2=ddx*ddx+ddy*ddy;
+            if(d2<=maxD2) cand.push([d2,j]);
+          }
+        }
+        cand.sort(function(a,c){return a[0]-c[0];});
+        for(var k=0;k<K&&k<cand.length;k++){
+          var jj=cand[k][1], pk=i2<jj?key(i2,jj):key(jj,i2);
+          if(seen[pk])continue; seen[pk]=1; out.push([i2,jj]);
+        }
+      }
+      return out;
+    }
+    function easeInOut(t){ return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+
+    /* pulses travel whichever topology is currently dominant, so synapse pulses
+       stay on real links through the morph (logo wiring early, graph wiring as
+       it opens). Endpoints are node indices into the one shared node array. */
+    function spawnPulse(t){ var set=(morph>0.5&&graphEdges.length)?graphEdges:edges; var e=set[(Math.random()*set.length)|0]; if(e) pulses.push({a:e[0],b:e[1],t:t===undefined?0:t,sp:0.012+Math.random()*0.016}); }
+    function seedPulses(){ var c=Math.min(20,Math.floor(edges.length*0.05)); for(var i=0;i<c;i++) spawnPulse(Math.random()); }
+    /* one-time RECALL PULSE - an expanding ring from the mark center at lock,
+       plus a burst of travelling synapse pulses. */
+    function fireRecall(){
+      waves.push({t0:performance.now(),max:S*1.15});
+      var burst=Math.min(40,Math.floor(edges.length*0.09));
+      for(var i=0;i<burst;i++) spawnPulse(Math.random()*0.2);
+    }
+    window.__heroRipple=function(){ if(!REDUCE) fireRecall(); };
+
+    function resize(){
+      var r=canvas.getBoundingClientRect();
+      W=r.width; H=r.height;
+      DPR=Math.min(window.devicePixelRatio||1, W<560?1.5:2);
+      canvas.width=Math.round(W*DPR); canvas.height=Math.round(H*DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      build();
+    }
+    function onMove(e){var t=e.touches?e.touches[0]:e;pointer.x=t.clientX;pointer.y=t.clientY;pointer.active=true;}
+    function onLeave(){pointer.active=false;pointer.x=-9999;pointer.y=-9999;}
+    if(!REDUCE){
+      window.addEventListener('mousemove',onMove,{passive:true});
+      window.addEventListener('mouseout',function(e){if(!e.relatedTarget)onLeave();});
+    }
+
+    function easeOutCubic(t){return 1-Math.pow(1-t,3);}
+    function colorFor(t){ return t==='brain'?COL.brain:COL.vault; }
+    /* draw a synapse link set at a given alpha, brand-blue per endpoint, over
+       the live (lerped) node positions. Used to cross-fade logo <-> graph. */
+    function drawEdges(set, alpha){
+      if(alpha<=0.002) return;
+      for(var l=0;l<set.length;l++){
+        var A=nodes[set[l][0]], B=nodes[set[l][1]];
+        if(!A||!B) continue;
+        var c=(A.t==='vault'&&B.t==='vault')?COL.vault:COL.brain;
+        ctx.strokeStyle=rgba(c,alpha);
+        ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();
+      }
+    }
+
+    function frame(now){
+      var time=(now-t0)/1000;
+      ctx.clearRect(0,0,W,H);
+      if(!locked){
+        if(!formStart) formStart=now;
+        form=Math.min(1,(now-formStart)/FORM_MS);
+        if(form>=1){ locked=true; fireRecall(); if(window.__heroLock) window.__heroLock(); }
+      }
+      var formA=easeOutCubic(form);
+      var magR=150, magR2=magR*magR;
+      /* derive the morph contribution + canvas opacity from the single scrubbed
+         `morph` (0 in the hero, 1 at the spacer's end). morphVis ramps the morph
+         in over the first slice; the whole canvas fades out over the last slice
+         so the constellation never bleeds over the Problem section. The hero
+         logo stays at full opacity for the entire hero (morph==0). */
+      morphVis = morph<=0 ? 0 : (morph<0.16 ? morph/0.16 : 1);
+      var canvasOpacity = morph<0.80 ? 1 : Math.max(0, 1-(morph-0.80)/0.20);
+      canvas.style.opacity = canvasOpacity;
+      /* effective morph 0..1: the scroll scrub eased, gated by the visibility
+         ramp + by being fully locked, so the morph only ever plays once the
+         logo has assembled. ONE value, on the ONE node array. */
+      var em=locked ? easeInOut(Math.max(0,Math.min(1,morph)))*morphVis : 0;
+      var morphing = em>0.0005;
+      /* the cursor lean + recall idle reads as the calm logo; suppress it as the
+         graph opens so the constellation drift takes over cleanly. */
+      var leanGate=locked?(1-em):0;
+
+      /* advance node positions: fly-in until lock, then idle drift + cursor lean,
+         then a scroll-scrubbed lerp of the SAME nodes home -> graph target. */
+      for(var i=0;i<nodes.length;i++){
+        var n=nodes[i];
+        /* idle drift amplitude grows as the graph opens up */
+        var amp=n.amp+(n.gamp-n.amp)*em;
+        var hx=n.hx+Math.sin(time*n.spd+n.tw)*amp*(locked?1:0);
+        var hy=n.hy+Math.cos(time*n.spd*0.9+n.tw)*amp*0.8*(locked?1:0);
+        if(pointer.active && leanGate>0){
+          var dx=pointer.x-hx, dy=pointer.y-hy, d2=dx*dx+dy*dy;
+          if(d2<magR2){ var d=Math.sqrt(d2)||1, pull=(1-d/magR); pull=pull*pull*22*leanGate; hx+=(dx/d)*pull; hy+=(dy/d)*pull; }
+        }
+        /* lerp toward the graph target by the eased morph (after lock only) */
+        if(em>0){ hx=hx+(n.gx-hx)*em; hy=hy+(n.gy-hy)*em; }
+        if(!locked){
+          var lf=Math.max(0,Math.min(1,(form-n.delay)/(1-n.delay)));
+          var e=easeOutCubic(lf);
+          n.x=n.sx+(hx-n.sx)*e; n.y=n.sy+(hy-n.sy)*e;
+        } else {
+          n.x+=(hx-n.x)*0.16; n.y+=(hy-n.y)*0.16;
+        }
+      }
+
+      /* synapse links - brand-blue per endpoint, fading in with the assembly.
+         Through the morph the tight logo wiring cross-fades into the wider graph
+         wiring, so the lines stay alive at every frame. */
+      var linkBase=(COL.isLight?0.20:0.24)*formA;
+      ctx.lineWidth=0.8;
+      drawEdges(edges, linkBase*(1-em));
+      if(morphing) drawEdges(graphEdges, linkBase*em);
+
+      /* cursor as synapse: branch lines + travelling sparks toward the pointer.
+         A logo-state interaction - fades out as the constellation opens. */
+      if(pointer.active && locked && leanGate>0.02){
+        var near=[];
+        for(var pi=0;pi<nodes.length;pi++){var nn=nodes[pi],ax=nn.x-pointer.x,ay=nn.y-pointer.y,dd=ax*ax+ay*ay;if(dd<170*170)near.push({i:pi,d:dd});}
+        near.sort(function(a,b){return a.d-b.d;});
+        var lim=Math.min(near.length,10);
+        for(var q=0;q<lim;q++){
+          var node=nodes[near[q].i], dist=Math.sqrt(near[q].d), a2=(1-dist/240)*0.6*leanGate;
+          if(a2<=0)continue;
+          ctx.strokeStyle=rgba(COL.pulse,a2);ctx.lineWidth=1.2;
+          ctx.beginPath();ctx.moveTo(pointer.x,pointer.y);ctx.lineTo(node.x,node.y);ctx.stroke();
+          var sp=(time*1.4+q*0.3)%1, sx=pointer.x+(node.x-pointer.x)*sp, sy=pointer.y+(node.y-pointer.y)*sp;
+          ctx.fillStyle=rgba(COL.pulse,a2*0.9);ctx.beginPath();ctx.arc(sx,sy,1.5,0,Math.PI*2);ctx.fill();
+        }
+        ctx.lineWidth=1;
+        ctx.globalCompositeOperation='lighter';
+        ctx.fillStyle=rgba(COL.pulse,0.85*leanGate);
+        ctx.beginPath();ctx.arc(pointer.x,pointer.y,2.6,0,Math.PI*2);ctx.fill();
+        ctx.globalCompositeOperation='source-over';
+      }
+
+      /* nodes - glow halo + solid core, sized + tinted by half. Vault nodes are
+         a touch smaller + lighter (the outlined safe), brain nodes brighter. */
+      for(var k2=0;k2<nodes.length;k2++){
+        var nd=nodes[k2], col=colorFor(nd.t);
+        var baseR=nd.t==='brain'?1.7:1.35;
+        var pr=baseR*(0.9+0.18*Math.sin(time*1.6+nd.tw));
+        var gr=pr*2.6;
+        var grd=ctx.createRadialGradient(nd.x,nd.y,0,nd.x,nd.y,gr);
+        grd.addColorStop(0,rgba(col,(COL.isLight?0.5:0.62)*(0.35+0.65*formA)));
+        grd.addColorStop(1,rgba(col,0));
+        ctx.fillStyle=grd;ctx.beginPath();ctx.arc(nd.x,nd.y,gr,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=rgba(nd.t==='vault'?COL.vaultLite:col,0.96*(0.45+0.55*formA));
+        ctx.beginPath();ctx.arc(nd.x,nd.y,pr*0.66,0,Math.PI*2);ctx.fill();
+      }
+
+      /* travelling synapse pulses (after lock) */
+      ctx.globalCompositeOperation='lighter';
+      for(var pp=pulses.length-1;pp>=0;pp--){
+        var P=pulses[pp],La=nodes[P.a],Lb=nodes[P.b];
+        if(!La||!Lb){pulses.splice(pp,1);continue;}
+        P.t+=P.sp;
+        if(P.t>=1){pulses.splice(pp,1);if(locked&&edges.length&&pulses.length<24)spawnPulse(0);continue;}
+        var x=La.x+(Lb.x-La.x)*P.t, y=La.y+(Lb.y-La.y)*P.t;
+        var pg=ctx.createRadialGradient(x,y,0,x,y,7);
+        pg.addColorStop(0,rgba(COL.pulse,0.9));pg.addColorStop(0.4,rgba(COL.pulse,0.45));pg.addColorStop(1,rgba(COL.pulse,0));
+        ctx.fillStyle=pg;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=rgba(COL.pulse,1);ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fill();
+      }
+      ctx.globalCompositeOperation='source-over';
+
+      /* expanding recall rings */
+      for(var wv=waves.length-1;wv>=0;wv--){
+        var Wv=waves[wv],wt=(now-Wv.t0)/700;
+        if(wt>=1){waves.splice(wv,1);continue;}
+        var rad=easeOutCubic(wt)*Wv.max, a=(1-wt)*0.45;
+        if(rad<0)rad=0;
+        ctx.strokeStyle=rgba(COL.pulse,a);ctx.lineWidth=2*(1-wt)+0.5;
+        ctx.beginPath();ctx.arc(ox+S*0.5,oy+S*0.5,rad,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
+      }
+      rafId=requestAnimationFrame(frame);
+    }
+
+    function renderStatic(){
+      ctx.clearRect(0,0,W,H);
+      for(var i=0;i<nodes.length;i++){nodes[i].x=nodes[i].hx;nodes[i].y=nodes[i].hy;}
+      var linkBase=COL.isLight?0.22:0.26;ctx.lineWidth=0.8;
+      for(var l=0;l<edges.length;l++){var A=nodes[edges[l][0]],B=nodes[edges[l][1]],c=(A.t==='vault'&&B.t==='vault')?COL.vault:COL.brain;ctx.strokeStyle=rgba(c,linkBase);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();}
+      for(var k=0;k<nodes.length;k++){var nd=nodes[k],col=colorFor(nd.t),pr=nd.t==='brain'?1.6:1.3,gr=pr*2.2;var grd=ctx.createRadialGradient(nd.x,nd.y,0,nd.x,nd.y,gr);grd.addColorStop(0,rgba(col,0.5));grd.addColorStop(1,rgba(col,0));ctx.fillStyle=grd;ctx.beginPath();ctx.arc(nd.x,nd.y,gr,0,Math.PI*2);ctx.fill();ctx.fillStyle=rgba(nd.t==='vault'?COL.vaultLite:col,0.95);ctx.beginPath();ctx.arc(nd.x,nd.y,pr*0.64,0,Math.PI*2);ctx.fill();}
+    }
+
+    resize();
+    var rzT;window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(function(){resize();if(REDUCE)renderStatic();},160);});
+    if(REDUCE){ canvas.style.opacity=1; renderStatic(); }
+    else{ canvas.style.opacity=1; rafId=requestAnimationFrame(frame); }
+    if(reduceMQ.addEventListener){reduceMQ.addEventListener('change',function(e){REDUCE=e.matches;if(REDUCE){if(rafId)cancelAnimationFrame(rafId);locked=true;form=1;morph=0;morphVis=0;renderStatic();}else{rafId=requestAnimationFrame(frame);}});}
+
+    /* ---------- scroll scrub: logo -> constellation, on these SAME nodes ----------
+       The transparent .morph-spacer below the hero is the scroll distance. As it
+       passes, `morph` runs 0 -> 1 (assembled logo -> constellation). morphVis
+       (derived in frame()) ramps the morph contribution in as the hero copy
+       clears, and the whole canvas fades out over the tail so it never bleeds
+       over the Problem section. One canvas, one node array - no second render.
+       Only wired when GSAP is present and motion is allowed; otherwise the
+       canvas stays the calm static logo. */
+    if(!REDUCE && hasGSAP && window.ScrollTrigger){
+      ScrollTrigger.create({
+        trigger:'.morph-spacer',
+        start:'top bottom',   /* spacer top reaches viewport bottom (hero about to leave) */
+        end:'bottom bottom',  /* spacer fully scrolled past */
+        scrub:true,
+        onUpdate:function(self){ morph=self.progress; }
+      });
+    }
+
+    window.__heroBrain={recolor:recolor};
+  })();
+
+  /* =========================================================
+     HERO - copy reveal + parallax + accent charge (the signature beat)
+     The brain's rush-in fires window.__heroLock at the lock moment; the
+     copy reveal is choreographed to land in sync.
+  ========================================================= */
+  (function heroChoreography(){
+    var copy=document.getElementById('heroCopy');
+    var accent=document.getElementById('accentWord');
+    var aurora=document.querySelector('.hero-aurora');
+    var dust=document.getElementById('heroDust');
+    if(!copy) return;
+
+    var lines=copy.querySelectorAll('.h1-line');
+    function releaseClip(){ lines.forEach(function(l){l.classList.add('revealed');}); }
+
+    if(REDUCE){
+      /* calm static assembly - everything visible, no motion */
+      if(aurora) aurora.style.opacity='1';
+      if(accent) accent.classList.remove('accent-charge');
+      releaseClip();
+      return;
+    }
+    root.classList.add('js-anim');
+
+    if(hasGSAP){
+      var words=copy.querySelectorAll('.word');
+      var tl=gsap.timeline({delay:0.15});
+      tl.to(aurora,{opacity:1,duration:1.1,ease:'power2.out'},0);
+      tl.from('.eyebrow',{y:14,opacity:0,duration:.6,ease:'power3.out'},0.05);
+      /* word-by-word slide-up reveal, in sync with the ~1.2s rush-in */
+      words.forEach(function(w,idx){
+        tl.add(function(){w.classList.add('in');}, 0.2+idx*0.075);
+      });
+      tl.add(releaseClip, 1.0);
+      /* at the lock moment (~1.2s after brain start) the accent word gets a
+         one-time gradient "charge" sweep, then rests at the solid color */
+      tl.add(function(){
+        if(accent){
+          accent.classList.add('accent-charge');
+          requestAnimationFrame(function(){ accent.classList.add('charged'); });
+          setTimeout(function(){ accent.classList.remove('accent-charge','charged'); }, 1150);
+        }
+      }, 1.05);
+      tl.from('.lead',{y:18,opacity:0,duration:.7,ease:'power3.out'},0.55);
+      tl.from('.hero .cta',{y:16,opacity:0,duration:.6,ease:'power3.out'},0.7);
+      /* badges slide (no opacity:0) so a static snapshot never sees them hidden */
+      tl.from('.badges',{y:12,duration:.6,ease:'power2.out'},0.85);
+      tl.from('.term',{y:24,opacity:0,duration:.8,ease:'power3.out'},0.7);
+    } else {
+      /* no GSAP: just show words and the aurora */
+      copy.querySelectorAll('.word').forEach(function(w){w.classList.add('in');});
+      if(aurora) aurora.style.opacity='1';
+      releaseClip();
+    }
+
+    /* subtle mouse parallax - copy, aurora, and dust drift on opposite axes
+       so the hero reads as layered depth (throttled via rAF). */
+    var px=0,py=0,tx=0,ty=0,raf=null;
+    function apply(){
+      tx+=(px-tx)*0.08; ty+=(py-ty)*0.08;
+      if(copy) copy.style.transform='translate3d('+(tx*-6)+'px,'+(ty*-6)+'px,0)';
+      if(aurora) aurora.style.transform='translate3d('+(tx*16)+'px,'+(ty*16)+'px,0)';
+      if(dust) dust.style.transform='translate3d('+(tx*10)+'px,'+(ty*10)+'px,0)';
+      if(Math.abs(px-tx)>0.001||Math.abs(py-ty)>0.001){ raf=requestAnimationFrame(apply); } else { raf=null; }
+    }
+    window.addEventListener('mousemove',function(e){
+      px=(e.clientX/window.innerWidth)*2-1; py=(e.clientY/window.innerHeight)*2-1;
+      if(!raf) raf=requestAnimationFrame(apply);
+    },{passive:true});
+
+    /* accent word hover/focus sends a ripple through the brain */
+    if(accent){
+      accent.addEventListener('mouseenter',function(){ if(window.__heroRipple) window.__heroRipple(); });
+      accent.addEventListener('focus',function(){ if(window.__heroRipple) window.__heroRipple(); });
+    }
+  })();
+
+  /* =========================================================
+     HERO - foreground particle dust (faint drift above the brain)
+  ========================================================= */
+  (function heroDust(){
+    var canvas=document.getElementById('heroDust');
+    if(!canvas||REDUCE) return;
+    var ctx=canvas.getContext('2d');
+    var W=0,H=0,DPR=1,parts=[],col=null;
+    function recolor(){ col=parseColor(cssVar('--soft')); }
+    recolor();
+    function build(){
+      parts.length=0;
+      var n=W<560?14:(W<980?22:34);
+      for(var i=0;i<n;i++){
+        parts.push({x:Math.random()*W,y:Math.random()*H,
+          r:0.6+Math.random()*1.4,sp:4+Math.random()*10,
+          ph:Math.random()*Math.PI*2,drift:6+Math.random()*14});
+      }
+    }
+    function resize(){
+      var rect=canvas.getBoundingClientRect();
+      W=rect.width;H=rect.height;DPR=Math.min(window.devicePixelRatio||1,W<560?1.5:2);
+      canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);build();
+    }
+    var t0=performance.now();
+    function frame(now){
+      var t=(now-t0)/1000;ctx.clearRect(0,0,W,H);
+      for(var i=0;i<parts.length;i++){
+        var p=parts[i];
+        var y=(p.y-t*p.sp); y=((y%H)+H)%H;
+        var x=p.x+Math.sin(t*0.4+p.ph)*p.drift;
+        var a=0.10+0.10*Math.sin(t*0.7+p.ph);
+        ctx.fillStyle=rgba(col,Math.max(0,a));
+        ctx.beginPath();ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    resize();
+    var rzT;window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(resize,180);});
+    if(hasGSAP){ gsap.to(canvas,{opacity:1,duration:1.4,delay:0.5,ease:'power2.out'}); }
+    else { canvas.style.opacity='1'; }
+    requestAnimationFrame(frame);
+    window.__heroDust={recolor:recolor};
+  })();
+
+  /* =========================================================
+     HERO TERMINAL
+  ========================================================= */
+  (function terminal(){
+    var termBody=document.getElementById('termBody');
+    if(!termBody) return;
+    var SEQ=[
+      {t:'cmd',pre:'$ ',text:'npm i -g neurovault'},
+      {t:'ok', pre:'', text:'[ok] installed - engine + native MCP server'},
+      {t:'gap'},
+      {t:'cmd',pre:'$ ',text:'claude mcp add neurovault'},
+      {t:'ok', pre:'', text:'[ok] connected - 54 tools - brain @ 127.0.0.1:8765'},
+      {t:'gap'},
+      {t:'cmd',pre:'agent > ',text:'remember("Dath ships on Fridays, never Mondays")'},
+      {t:'ok', pre:'', text:'[ok] saved engram - local - written to vault/*.md'},
+      {t:'gap'},
+      {t:'cmd',pre:'agent > ',text:'recall("when do we ship?")'},
+      {t:'out',pre:'', text:'-> "Dath ships on Fridays, never Mondays"'},
+      {t:'dim',pre:'', text:'  recalled in a brand-new session - 0 tokens of context'}
+    ];
+    function styleFor(t){return t==='ok'?'ok':t==='out'?'out':t==='dim'?'dim':'cmd';}
+    function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function buildStatic(){
+      var html='';
+      SEQ.forEach(function(s){
+        if(s.t==='gap'){html+='<span class="ln">&nbsp;</span>';return;}
+        html+='<span class="ln '+styleFor(s.t)+'"><span class="p">'+esc(s.pre||'')+'</span>'+esc(s.text)+'</span>';
+      });
+      termBody.innerHTML=html;
+    }
+    function typeRun(){
+      var idx=0;
+      function nextLine(){
+        if(idx>=SEQ.length){setTimeout(function(){termBody.innerHTML='';idx=0;setTimeout(nextLine,400);},3600);return;}
+        var s=SEQ[idx];
+        if(s.t==='gap'){termBody.insertAdjacentHTML('beforeend','<span class="ln">&nbsp;</span>');idx++;setTimeout(nextLine,120);return;}
+        var line=document.createElement('span');line.className='ln '+styleFor(s.t);
+        var pre=document.createElement('span');pre.className='p';pre.textContent=s.pre||'';
+        var body=document.createElement('span');
+        var caret=document.createElement('span');caret.className='caret';
+        line.appendChild(pre);line.appendChild(body);line.appendChild(caret);termBody.appendChild(line);
+        if(s.t!=='cmd'){body.textContent=s.text;line.removeChild(caret);idx++;setTimeout(nextLine,360);return;}
+        var full=s.text,ci=0,speed=22+Math.random()*22;
+        (function typeChar(){
+          if(ci<=full.length){body.textContent=full.slice(0,ci);ci++;setTimeout(typeChar,speed+(Math.random()<0.12?70:0));}
+          else{line.removeChild(caret);idx++;setTimeout(nextLine,280);}
+        })();
+      }
+      nextLine();
+    }
+    /* lock handshake - when the brain finishes forming it calls __heroLock;
+       the terminal answers with a single bright flash, so the beat reads as
+       brain -> recall pulse -> terminal lights up, one connected moment. */
+    var lit=false;
+    window.__heroLock=function(){
+      if(lit||REDUCE) return; lit=true;
+      var host=termBody.closest('.term'); if(!host) return;
+      host.classList.add('term-lit');
+      setTimeout(function(){ host.classList.remove('term-lit'); }, 900);
+    };
+    if(REDUCE){ buildStatic(); } else { setTimeout(typeRun,800); }
+  })();
+
+  /* =========================================================
+     RECALL - constellation with left->right pulse sweep
+  ========================================================= */
+  (function recall(){
+    var canvas=document.getElementById('recallCanvas');
+    if(!canvas) return;
+    var ctx=canvas.getContext('2d');
+    var W=0,H=0,DPR=1,nodes=[],links=[],cx=0,cy=0,scale=1;
+    var PAL={};
+    function recolor(){
+      PAL.node=cssVar('--node')||'#7FB0FF';
+      PAL.nodeDim=cssVar('--node-dim')||'#3a567f';
+      PAL.link=cssVar('--link')||'rgba(127,176,255,0.3)';
+      PAL.pulse=cssVar('--pulse')||'#bfe0ff';
+    }
+    recolor();
+    function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+    function insideBrainSeeded(x,y,rng){
+      var yy=y;
+      function lobe(ox,oy,rx,ry){var dx=(x-ox)/rx,dy=(yy-oy)/ry;return dx*dx+dy*dy<=1;}
+      var inMain=lobe(0.34,-0.02,0.74,0.66)||lobe(-0.34,-0.02,0.74,0.66)||lobe(0,-0.06,0.62,0.72)||lobe(0,-0.34,0.84,0.42)||lobe(0.52,0.18,0.42,0.40)||lobe(-0.52,0.18,0.42,0.40);
+      if(!inMain)return false;
+      if(yy>0.60){var stem=Math.abs(x)<0.13&&yy<0.88;if(!stem)return false;}
+      var fissure=Math.abs(x)<0.05&&yy<0.30;if(fissure&&rng()>0.16)return false;
+      return true;
+    }
+    function buildTargets(count){
+      var rng=mulberry32(20260628),pts=[],guard=0;
+      while(pts.length<count&&guard<count*60){guard++;var x=(rng()*2-1)*1.02,y=(rng()*2-1)*1.0;if(insideBrainSeeded(x,y,rng))pts.push({x:x,y:y});}
+      return pts;
+    }
+    var NODE_COUNT=320;
+    function setup(){
+      var rng=mulberry32(7),targets=buildTargets(NODE_COUNT);NODE_COUNT=targets.length;
+      nodes=targets.map(function(t){
+        var jx=(rng()-0.5)*0.04,jy=(rng()-0.5)*0.04,ang=rng()*Math.PI*2,rad=0.55+rng()*0.62;
+        return {bx:t.x+jx,by:t.y+jy,hx:Math.cos(ang)*rad*(0.9+rng()*0.5),hy:Math.sin(ang)*rad*(0.78+rng()*0.5),
+          x:0,y:0,px:0,py:0,ph:rng()*Math.PI*2,ph2:rng()*Math.PI*2,sp:0.5+rng()*0.9,r:0.9+rng()*1.5,f:0};
+      });
+      nodes.forEach(function(n){n.x=n.hx;n.y=n.hy;});
+      buildLinks();
+    }
+    function buildLinks(){
+      links=[];var n=nodes.length,maxD=0.135,maxD2=maxD*maxD;
+      for(var i=0;i<n;i++){var a=nodes[i],deg=0;for(var j=i+1;j<n;j++){var b=nodes[j],dx=a.bx-b.bx,dy=a.by-b.by,d2=dx*dx+dy*dy;if(d2<maxD2){links.push({a:i,b:j,d:Math.sqrt(d2)/maxD});deg++;if(deg>5)break;}}}
+    }
+    function resize(){
+      var rect=canvas.getBoundingClientRect();DPR=Math.min(window.devicePixelRatio||1,2);
+      W=Math.max(1,Math.round(rect.width));H=Math.max(1,Math.round(rect.height));
+      canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);cx=W/2;cy=H/2;scale=Math.min(W,H)*0.46;
+    }
+    function toPx(nx,ny){return {x:cx+nx*scale,y:cy+ny*scale};}
+    var pulse={active:false,t:0};
+    function firePulse(){pulse.active=true;pulse.t=-0.15;}
+    function applyAlpha(col,a){
+      a=Math.max(0,Math.min(1,a));
+      if(col.charAt(0)==='#'){var c=hexToRgb(col);return 'rgba('+c.r+','+c.g+','+c.b+','+a+')';}
+      var m=col.match(/rgba?\(([^)]+)\)/);if(m){var pr=m[1].split(',');return 'rgba('+pr[0].trim()+','+pr[1].trim()+','+pr[2].trim()+','+a+')';}
+      return col;
+    }
+    function hexToRgb(h){h=h.replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];var n=parseInt(h,16);return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
+    function mixHex(a,b,t){var ca=hexToRgb(a),cb=hexToRgb(b);return 'rgb('+Math.round(ca.r+(cb.r-ca.r)*t)+','+Math.round(ca.g+(cb.g-ca.g)*t)+','+Math.round(ca.b+(cb.b-ca.b)*t)+')';}
+    var time=0;
+    function draw(){
+      time+=0.016;ctx.clearRect(0,0,W,H);
+      for(var i=0;i<nodes.length;i++){
+        var n=nodes[i],f=n.f,bx=n.hx+(n.bx-n.hx)*f,by=n.hy+(n.by-n.hy)*f;
+        var amp=REDUCE?0:(0.06*(1-f)+0.006);
+        n.x=bx+Math.sin(time*n.sp+n.ph)*amp;n.y=by+Math.cos(time*n.sp*0.9+n.ph2)*amp;
+        var p=toPx(n.x,n.y);n.px=p.x;n.py=p.y;
+      }
+      var pulseX=null,pulseBand=0.16;
+      if(pulse.active){pulse.t+=0.020;pulseX=-1.15+pulse.t*2.4;if(pulse.t>1.25)pulse.active=false;}
+      ctx.lineWidth=1;
+      for(var L=0;L<links.length;L++){
+        var lk=links[L],a=nodes[lk.a],b=nodes[lk.b],lf=Math.min(a.f,b.f);
+        if(lf<0.04)continue;
+        var alpha=(1-lk.d)*0.9*lf,lpx=(a.x+b.x)/2,boost=0;
+        if(pulseX!==null){var dd=Math.abs(lpx-pulseX);if(dd<pulseBand)boost=(1-dd/pulseBand);}
+        ctx.strokeStyle=applyAlpha(PAL.link,alpha+boost*0.6);
+        ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);ctx.stroke();
+        if(boost>0.25){ctx.strokeStyle=applyAlpha(PAL.pulse,boost*0.5);ctx.lineWidth=1.6;ctx.stroke();ctx.lineWidth=1;}
+      }
+      for(var k=0;k<nodes.length;k++){
+        var nd=nodes[k],ng=0;
+        if(pulseX!==null){var d2=Math.abs(nd.x-pulseX);if(d2<pulseBand)ng=(1-d2/pulseBand);}
+        var baseCol=mixHex(PAL.nodeDim,PAL.node,Math.min(1,nd.f*1.1)),rr=nd.r*(1+nd.f*0.25+ng*0.8);
+        if(ng>0.15||nd.f>0.55){
+          var gAlpha=Math.max(ng,(nd.f-0.55)*0.5);
+          var grd=ctx.createRadialGradient(nd.px,nd.py,0,nd.px,nd.py,rr*6);
+          grd.addColorStop(0,applyAlpha(ng>0.15?PAL.pulse:PAL.node,0.5*gAlpha+ng*0.4));
+          grd.addColorStop(1,applyAlpha(PAL.node,0));
+          ctx.fillStyle=grd;ctx.beginPath();ctx.arc(nd.px,nd.py,rr*6,0,Math.PI*2);ctx.fill();
+        }
+        ctx.fillStyle=ng>0.2?PAL.pulse:baseCol;ctx.beginPath();ctx.arc(nd.px,nd.py,rr,0,Math.PI*2);ctx.fill();
+      }
+    }
+    var rafId=null;
+    function loop(){draw();rafId=requestAnimationFrame(loop);}
+    function start(){
+      if(REDUCE||!hasGSAP){nodes.forEach(function(n){n.f=1;});draw();if(!REDUCE)loop();return;}
+      nodes.forEach(function(n){n.f=1;});loop();
+      var tl=gsap.timeline({repeat:-1,defaults:{ease:'power2.inOut'},
+        scrollTrigger:{trigger:'#recall',start:'top 70%'}});
+      tl.add(function(){firePulse();},0.15);
+      tl.to({},{duration:2.6});
+      tl.to(nodes,{f:0,duration:1.25,ease:'power2.in',stagger:{each:0.0026,from:'edges'}});
+      tl.to({},{duration:1.2});
+      tl.to(nodes,{f:1,duration:1.5,ease:'elastic.out(0.65,0.42)',stagger:{each:0.0032,from:'random'}},'reform');
+      tl.add(function(){firePulse();},'reform+=1.08');
+      tl.to({},{duration:2.4});
+    }
+    setup();resize();
+    nodes.forEach(function(n){n.x=n.hx;n.y=n.hy;});
+    start();
+    var rr2=null;window.addEventListener('resize',function(){if(rr2)cancelAnimationFrame(rr2);rr2=requestAnimationFrame(resize);});
+    window.__recall={recolor:recolor};
+  })();
+
+  /* =========================================================
+     HANDOFF DIAGRAM - packet travels A -> brain -> B
+  ========================================================= */
+  (function handoff(){
+    var svg=document.getElementById('handoffSvg');
+    var edgeA=document.getElementById('edgeA');
+    var edgeB=document.getElementById('edgeB');
+    var packet=document.getElementById('hfPacket');
+    if(!svg||!edgeA||!edgeB||!packet) return;
+    if(REDUCE){ packet.style.display='none'; return; }
+    if(!hasGSAP){ return; }
+    var lenA=edgeA.getTotalLength(), lenB=edgeB.getTotalLength();
+    function place(path,len,t){var p=path.getPointAtLength(len*t);packet.setAttribute('cx',p.x);packet.setAttribute('cy',p.y);}
+    var st={a:0};
+    var tl=gsap.timeline({repeat:-1,repeatDelay:0.7,
+      scrollTrigger:{trigger:'#coordination',start:'top 75%'}});
+    tl.set(packet,{opacity:0});
+    tl.set(st,{a:0});
+    tl.to(packet,{opacity:1,duration:0.2});
+    tl.to(st,{a:1,duration:1.0,ease:'power1.inOut',onUpdate:function(){place(edgeA,lenA,st.a);}});
+    tl.to(packet,{scale:1.8,transformOrigin:'center',duration:0.18,yoyo:true,repeat:1});
+    tl.set(st,{a:0});
+    tl.to(st,{a:1,duration:1.0,ease:'power1.inOut',onUpdate:function(){place(edgeB,lenB,st.a);}});
+    tl.to(packet,{opacity:0,duration:0.25});
+  })();
+
+  /* =========================================================
+     NAV shadow on scroll
+  ========================================================= */
+  (function navScroll(){
+    var nav=document.getElementById('nav');
+    if(!nav) return;
+    function onScroll(){ nav.classList.toggle('scrolled', window.scrollY>10); }
+    window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+  })();
+
+  /* =========================================================
+     SCROLL REVEAL (IntersectionObserver)
+  ========================================================= */
+  (function reveal(){
+    var els=document.querySelectorAll('.reveal');
+    if(REDUCE || !('IntersectionObserver' in window)){
+      els.forEach(function(e){e.classList.add('in');});return;
+    }
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
+    },{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){io.observe(e);});
+  })();
+
+  /* =========================================================
+     CONFIDENCE bars fill on view
+  ========================================================= */
+  /* Confidence bars animate purely via CSS: the inline --v drives
+     transform:scaleX with a transition, so they grow when first painted.
+     No JS needed; the reduced-motion block disables the transition. */
+
+  /* =========================================================
+     PREMIUM MICRO-INTERACTIONS (wow touches)
+     Cursor-follow glow on the primary download buttons, a subtle
+     pointer-tilt on the problem cards, and a count-up on the stat
+     numbers when they scroll into view. All no-ops under REDUCE.
+  ========================================================= */
+
+  /* --- cursor-follow glow: feed --mx/--my to .btn-dl-primary::after --- */
+  (function ctaGlow(){
+    if(REDUCE) return;
+    var btns=document.querySelectorAll('.btn-dl-primary');
+    btns.forEach(function(b){
+      b.addEventListener('pointermove',function(e){
+        var r=b.getBoundingClientRect();
+        b.style.setProperty('--mx',(e.clientX-r.left)+'px');
+        b.style.setProperty('--my',(e.clientY-r.top)+'px');
+      },{passive:true});
+      b.addEventListener('pointerleave',function(){
+        b.style.removeProperty('--mx'); b.style.removeProperty('--my');
+      });
+    });
+  })();
+
+  /* --- subtle pointer-tilt on the problem cards (max ~3deg) --- */
+  (function cardTilt(){
+    if(REDUCE) return;
+    if(window.matchMedia && window.matchMedia('(hover:none)').matches) return;
+    var MAX=3;
+    document.querySelectorAll('.problem-grid .card').forEach(function(card){
+      card.addEventListener('pointermove',function(e){
+        var r=card.getBoundingClientRect();
+        var px=(e.clientX-r.left)/r.width-0.5, py=(e.clientY-r.top)/r.height-0.5;
+        card.classList.add('tilting');
+        card.style.setProperty('--rx',(px*MAX).toFixed(2)+'deg');
+        card.style.setProperty('--ry',(-py*MAX).toFixed(2)+'deg');
+      },{passive:true});
+      card.addEventListener('pointerleave',function(){
+        card.classList.remove('tilting');
+        card.style.setProperty('--rx','0deg');
+        card.style.setProperty('--ry','0deg');
+      });
+    });
+  })();
+
+  /* --- count-up on stat numbers when they scroll into view --- */
+  (function countUp(){
+    var els=document.querySelectorAll('.gfy-stat strong,.bmetric-num');
+    function parse(str){
+      var m=String(str).match(/^([^0-9-]*)(-?[\d.,]+)(.*)$/);
+      if(!m) return null;
+      var num=parseFloat(m[2].replace(/,/g,''));
+      if(isNaN(num)) return null;
+      return {pre:m[1],num:num,suf:m[3],raw:m[2],decimals:(m[2].split('.')[1]||'').length,grouped:m[2].indexOf(',')>=0};
+    }
+    function fmt(v,info){
+      var s=info.decimals>0?v.toFixed(info.decimals):String(Math.round(v));
+      if(info.grouped) s=Number(s).toLocaleString('en-US');
+      return info.pre+s+info.suf;
+    }
+    els.forEach(function(el){
+      var span=el.querySelector('span');                 /* bmetric keeps its % suffix in a child <span> */
+      var target=span?el.firstChild:el;                  /* count only the leading numeric text node */
+      var info=parse((target.textContent||'').trim());
+      el.dataset.final=(target.textContent||'').trim();
+      if(info){ el.__cu={info:info,target:target}; }
+    });
+    function run(el){
+      var cu=el.__cu; if(!cu||el.dataset.done) return; el.dataset.done='1';
+      if(REDUCE){ cu.target.textContent=el.dataset.final; return; }
+      var info=cu.info, t0=null, DUR=1100;
+      function tick(now){
+        if(t0===null) t0=now;
+        var p=Math.min(1,(now-t0)/DUR), e=1-Math.pow(1-p,3);
+        cu.target.textContent=fmt(info.num*e,info);
+        if(p<1) requestAnimationFrame(tick);
+        else cu.target.textContent=el.dataset.final;
+      }
+      requestAnimationFrame(tick);
+    }
+    if(REDUCE || !('IntersectionObserver' in window)){
+      els.forEach(function(el){ if(el.__cu) el.__cu.target.textContent=el.dataset.final; });
+      return;
+    }
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ run(en.target); io.unobserve(en.target); } });
+    },{threshold:0.5});
+    els.forEach(function(el){ if(el.__cu){ el.__cu.target.textContent=fmt(0,el.__cu.info); io.observe(el); } });
+  })();
+
+})();
+</script>
 </body>
 </html>
