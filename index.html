@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0b0b12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Apply stored theme before paint (prevents flash) -->
 <script>
@@ -24,8 +24,8 @@
    ====================================================================== */
 :root{
   /* dark (default) */
-  --bg:#0b0b12;
-  --bg-deep:#07070c;
+  --bg:#08090f;
+  --bg-deep:#050509;
   --surface:#11111b;
   --surface-2:#15151f;
   --surface-3:#191926;
@@ -36,8 +36,8 @@
   --faint:#7e88a0;
   --primary:#2F7BF6;
   --soft:#7FB0FF;
-  --glow:rgba(47,123,246,.35);
-  --glow-strong:rgba(47,123,246,.55);
+  --glow:rgba(47,123,246,.42);
+  --glow-strong:rgba(47,123,246,.6);
   /* interactive accents (hover borders + sheen washes) */
   --border-hot:rgba(127,176,255,.55);
   --sheen:rgba(127,176,255,.55);
@@ -69,7 +69,7 @@
   --maxw:1180px;
   --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
   --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --display:'Sora','Inter',system-ui,sans-serif;
   --ease:cubic-bezier(.22,.61,.36,1);
 }
 html[data-theme="light"]{
@@ -331,8 +331,8 @@ html[data-theme="light"] h2.sec-title .grad{color:#1f5fd4}
 .hero-wrap{
   position:relative;isolation:isolate;
   background:
-    radial-gradient(900px 760px at 71% 46%, var(--glow), transparent 64%),
-    radial-gradient(1200px 800px at 72% 38%, var(--halo), transparent 60%),
+    radial-gradient(1040px 840px at 80% 48%, var(--glow), transparent 66%),
+    radial-gradient(1320px 880px at 82% 40%, var(--halo), transparent 62%),
     linear-gradient(180deg,var(--bg) 0%,var(--bg-deep) 100%);
 }
 /* the single hero/morph canvas: pinned for the whole wrapper so one instance
@@ -358,8 +358,8 @@ html[data-theme="light"] h2.sec-title .grad{color:#1f5fd4}
     linear-gradient(var(--grid-line) 1px,transparent 1px),
     linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
   background-size:54px 54px;
-  -webkit-mask-image:radial-gradient(900px 700px at 70% 42%,#000 0%,transparent 72%);
-  mask-image:radial-gradient(900px 700px at 70% 42%,#000 0%,transparent 72%);
+  -webkit-mask-image:radial-gradient(980px 760px at 80% 46%,#000 0%,transparent 74%);
+  mask-image:radial-gradient(980px 760px at 80% 46%,#000 0%,transparent 74%);
 }
 /* ---------- transparent morph spacer (logo -> neural graph) ----------
    Pure scroll distance below the hero. As it scrolls past, the SAME sticky
@@ -413,9 +413,9 @@ html[data-theme="light"] h2.sec-title .grad{color:#1f5fd4}
   background:var(--primary);animation:livePulse 2.6s ease-out infinite}
 @keyframes livePulse{0%{transform:scale(1);opacity:.7}70%{transform:scale(3.6);opacity:0}100%{opacity:0}}
 h1{
-  font-family:var(--display);font-weight:600;
-  font-size:clamp(2.4rem,6vw,4.5rem);
-  line-height:1.04;letter-spacing:-.022em;margin-bottom:24px;
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(2.7rem,7vw,5.4rem);
+  line-height:.98;letter-spacing:-.025em;margin-bottom:24px;
   text-wrap:balance;
 }
 /* editorial depth: in dark the headline gets a faint downward shadow so it
@@ -1740,8 +1740,8 @@ html[data-theme="light"] .brand:hover .brand-word{filter:saturate(1.12) brightne
       /* the mark is square; place + scale it like the old brain - large, set
          to the right, drifting up on small screens so the copy stays clear. */
       var size,cx,cy;
-      if(W>=980){ size=Math.min(W*0.46,H*0.82,560); cx=W*0.70; cy=H*0.50; }
-      else if(W>=640){ size=Math.min(W*0.62,H*0.7,460); cx=W*0.64; cy=H*0.46; }
+      if(W>=980){ size=Math.min(W*0.58,H*1.0,760); cx=W*0.80; cy=H*0.52; }
+      else if(W>=640){ size=Math.min(W*0.68,H*0.74,520); cx=W*0.68; cy=H*0.46; }
       else{ size=Math.min(W*0.92,H*0.5,400); cx=W*0.52; cy=H*0.34; }
       S=size; ox=cx-S/2; oy=cy-S/2;
     }
