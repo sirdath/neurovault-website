@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroVault: local-first AI memory for Claude and every MCP agent</title>
+<meta name="description" content="NeuroVault is a local-first, open source memory system for Claude and other LLMs. Say it once. Any MCP agent recalls it the moment it is relevant. 100% on your machine.">
+<link rel="icon" href="../assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+  :root{
+    --bg0:#030609;
+    --bg1:#0a1220;
+    --ink:#e8eef7;
+    --ink-dim:#9fb2c8;
+    --ink-faint:#64788f;
+    --blue:#2F7BF6;
+    --cyan:#59d8ff;
+    --pale:#cfe0ff;
+    --ember:#ff9d5c;
+    --line:rgba(120,170,230,.13);
+    --card:rgba(13,23,38,.55);
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Inter',system-ui,sans-serif;
+    --disp:'Sora',var(--sans);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{overflow-x:clip}
+  body{
+    background:linear-gradient(180deg,var(--bg0) 0%,var(--bg1) 55%,var(--bg0) 100%);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(89,216,255,.28);color:#fff}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:4px}
+  img{max-width:100%;height:auto;display:block}
+  a{color:var(--cyan)}
+
+  .skip{
+    position:fixed;left:12px;top:-60px;z-index:200;background:#0b1626;color:var(--ink);
+    padding:10px 16px;border-radius:8px;text-decoration:none;transition:top .2s;
+    border:1px solid var(--line);font-family:var(--mono);font-size:13px;
+  }
+  .skip:focus{top:12px}
+
+  /* scroll progress */
+  #progress{
+    position:fixed;top:0;left:0;height:2px;width:100%;z-index:120;
+    background:linear-gradient(90deg,var(--blue),var(--cyan));
+    box-shadow:0 0 12px rgba(89,216,255,.7);
+    transform:scaleX(0);transform-origin:0 50%;pointer-events:none;
+  }
+
+  /* custom cursor */
+  #cursor{
+    position:fixed;left:0;top:0;width:14px;height:14px;border-radius:50%;
+    background:radial-gradient(circle,rgba(180,235,255,.95),rgba(89,216,255,.5) 55%,transparent 72%);
+    box-shadow:0 0 18px rgba(89,216,255,.55);
+    z-index:150;pointer-events:none;mix-blend-mode:screen;
+    transform:translate(-100px,-100px);display:none;
+  }
+  body.has-cursor #cursor{display:block}
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;min-height:100svh;
+    display:flex;flex-direction:column;justify-content:flex-end;
+    padding:0 6vw 9vh;overflow:clip;
+  }
+  #organism{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .hero-scrim{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(60% 55% at 18% 78%,rgba(3,6,9,.86) 0%,rgba(3,6,9,.45) 55%,transparent 100%),
+      linear-gradient(0deg,rgba(3,6,9,.85) 0%,rgba(3,6,9,.25) 26%,transparent 46%);
+  }
+  .topbar{
+    position:absolute;top:0;left:0;right:0;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 6vw;
+  }
+  .topbar .brand img{height:22px;width:auto}
+  .navlink{
+    font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-dim);text-decoration:none;
+    background-image:linear-gradient(90deg,var(--cyan),var(--cyan));
+    background-repeat:no-repeat;background-size:0% 1px;background-position:0 100%;
+    padding-bottom:3px;transition:background-size .35s cubic-bezier(.22,1,.36,1),color .25s;
+  }
+  .navlink:hover{background-size:100% 1px;color:var(--ink)}
+
+  .hero-copy{position:relative;z-index:4;max-width:680px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--cyan);margin-bottom:22px;
+  }
+  h1{
+    font-family:var(--disp);font-weight:800;
+    font-size:clamp(2.8rem,7vw,5.8rem);
+    line-height:1.02;letter-spacing:-.025em;color:#f2f6fc;
+    margin-bottom:26px;text-wrap:balance;
+  }
+  h1 .w{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.08em;margin-bottom:-.08em}
+  h1 .wi{display:inline-block;will-change:transform}
+  .hero-sub{
+    font-size:clamp(1rem,1.3vw,1.18rem);color:var(--ink-dim);max-width:540px;
+    margin-bottom:34px;
+  }
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:20px}
+  .btn{
+    position:relative;display:inline-flex;align-items:center;gap:10px;
+    font-family:var(--sans);font-weight:600;font-size:15.5px;text-decoration:none;
+    padding:15px 28px;border-radius:999px;transition:box-shadow .3s,border-color .3s,background .3s;
+    will-change:transform;overflow:hidden;
+  }
+  .btn-primary{
+    color:#04101f;background:linear-gradient(120deg,#7fe4ff,var(--cyan) 40%,var(--blue));
+    box-shadow:0 4px 26px rgba(47,123,246,.4),0 0 0 1px rgba(140,220,255,.35) inset;
+  }
+  .btn-primary:hover{box-shadow:0 8px 40px rgba(89,216,255,.5),0 0 0 1px rgba(200,240,255,.5) inset}
+  .btn-primary .sheen{
+    position:absolute;top:-40%;bottom:-40%;left:-70%;width:38%;
+    background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:skewX(-18deg);pointer-events:none;
+  }
+  .btn-primary:hover .sheen{animation:sheen 1.1s ease .05s}
+  @keyframes sheen{to{left:135%}}
+  .btn-ghost{
+    color:var(--ink);border:1px solid rgba(140,180,230,.3);background:rgba(10,18,32,.4);
+  }
+  .btn-ghost:hover{border-color:rgba(89,216,255,.6);background:rgba(89,216,255,.07)}
+  .badge-line{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);letter-spacing:.08em}
+
+  .scroll-hint{
+    position:absolute;right:6vw;bottom:9vh;z-index:4;
+    font-family:var(--mono);font-size:11px;letter-spacing:.4em;color:var(--ink-faint);
+    writing-mode:vertical-rl;display:flex;align-items:center;gap:14px;
+  }
+  .scroll-hint::after{content:"";width:1px;height:56px;background:linear-gradient(180deg,var(--cyan),transparent)}
+
+  /* ============ MAIN / SECTIONS ============ */
+  main{position:relative}
+  #spine-wrap{
+    position:absolute;top:0;bottom:0;left:calc(3vw - 10px);width:60px;
+    pointer-events:none;z-index:1;
+  }
+  #spine{width:60px;overflow:visible}
+  section{
+    position:relative;z-index:2;
+    padding:15vh 6vw;max-width:1240px;margin:0 auto;
+  }
+  .sec-eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:16px;
+  }
+  .sec-eyebrow .idx{color:var(--ember);margin-right:12px}
+  h2{
+    font-family:var(--disp);font-weight:800;font-size:clamp(1.9rem,3.6vw,3.1rem);
+    line-height:1.08;letter-spacing:-.02em;margin-bottom:18px;text-wrap:balance;color:#eef4fb;
+  }
+  .lede{color:var(--ink-dim);max-width:620px;font-size:clamp(1rem,1.2vw,1.12rem);margin-bottom:52px}
+  .mono-label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint)}
+
+  /* problem cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{
+    position:relative;border-radius:18px;padding:34px 28px;
+    background:var(--card);border:1px solid var(--line);
+    backdrop-filter:blur(6px);
+    transition:transform .45s cubic-bezier(.22,1,.36,1),background .4s;
+  }
+  .card::before{
+    content:"";position:absolute;inset:-1px;border-radius:19px;padding:1px;
+    background:conic-gradient(from var(--ang),transparent 0deg,transparent 250deg,var(--cyan) 300deg,var(--ember) 330deg,transparent 360deg);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  .card:hover{transform:translateY(-8px);background:rgba(16,28,46,.7)}
+  .card:hover::before{opacity:1;animation:spin-border 2.6s linear infinite}
+  @keyframes spin-border{to{--ang:360deg}}
+  .card .k{font-family:var(--mono);font-size:12px;color:var(--ember);letter-spacing:.18em;margin-bottom:16px}
+  .card h3{font-family:var(--disp);font-weight:700;font-size:1.2rem;margin-bottom:12px;color:#e9f0f9}
+  .card p{color:var(--ink-dim);font-size:.96rem}
+
+  /* how diagram */
+  .diagram-wrap{
+    position:relative;border:1px solid var(--line);border-radius:22px;
+    background:rgba(8,15,27,.5);padding:clamp(8px,2vw,28px);
+  }
+  .diagram-wrap svg{width:100%;height:auto;display:block}
+  #nucleus-how{
+    position:absolute;left:39.6%;top:50%;width:22.9%;aspect-ratio:1;
+    transform:translate(-50%,-50%);pointer-events:none;
+  }
+  .chip-r{fill:rgba(14,25,42,.92);stroke:rgba(120,170,230,.3)}
+  .chip-t{fill:#dbe7f5;font-family:'JetBrains Mono',monospace;font-size:14px}
+  .wire{fill:none;stroke:rgba(90,160,230,.28);stroke-width:1.4}
+  .node-t{fill:#9fb2c8;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em}
+
+  /* bento pillars */
+  .bento{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .tile{
+    position:relative;border-radius:20px;padding:34px 30px;overflow:hidden;
+    background:var(--card);border:1px solid var(--line);
+    transition:border-color .4s;
+  }
+  .tile.s2{grid-column:span 2}
+  .tile::after{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(89,216,255,.13),transparent 65%);
+  }
+  .tile:hover{border-color:rgba(89,216,255,.4)}
+  .tile:hover::after{opacity:1}
+  .tile .mono-label{display:block;margin-bottom:18px;color:rgba(89,216,255,.75)}
+  .tile h3{font-family:var(--disp);font-weight:700;font-size:1.25rem;margin-bottom:10px;color:#e9f0f9}
+  .tile p{color:var(--ink-dim);font-size:.96rem;max-width:52ch}
+  .tile code{font-family:var(--mono);font-size:.86em;color:var(--pale);background:rgba(89,216,255,.08);padding:1px 7px;border-radius:6px}
+
+  /* benchmark */
+  .bench{display:grid;grid-template-columns:auto 1fr;gap:clamp(30px,6vw,90px);align-items:center}
+  .gauge-wrap{position:relative;width:min(300px,68vw)}
+  .gauge-wrap svg{width:100%;height:auto;display:block}
+  .gauge-num{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:800;
+  }
+  .gauge-num .n{font-size:clamp(3rem,5vw,4.4rem);letter-spacing:-.03em;color:#f2f6fc;line-height:1}
+  .gauge-num .n em{font-style:normal;color:var(--cyan)}
+  .gauge-num .l{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--ink-faint);margin-top:10px}
+  .honest{
+    font-family:var(--mono);font-size:13px;line-height:1.75;color:var(--ink-dim);
+    border-left:2px solid var(--ember);padding-left:18px;max-width:56ch;margin:26px 0 40px;
+  }
+  .stats{display:flex;flex-wrap:wrap;gap:16px 44px}
+  .stat .v{font-family:var(--disp);font-weight:700;font-size:1.7rem;color:var(--pale)}
+  .stat .k{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+
+  /* coordination */
+  .coord-note{
+    font-family:var(--mono);font-size:13px;color:var(--ink-dim);line-height:1.8;
+    max-width:60ch;margin-top:34px;
+  }
+  .coord-note b{color:var(--pale);font-weight:500}
+
+  /* final cta */
+  #cta{max-width:none;padding:22vh 6vw;text-align:center;overflow:clip}
+  #nucleus-cta{
+    position:absolute;left:50%;top:50%;width:min(78vmin,760px);aspect-ratio:1;
+    transform:translate(-50%,-50%);pointer-events:none;opacity:.85;
+  }
+  .cta-inner{position:relative;z-index:2;max-width:760px;margin:0 auto}
+  .cta-inner h2{font-size:clamp(2.1rem,4.4vw,3.7rem)}
+  .cta-inner .cta-row{justify-content:center;margin-top:36px}
+
+  footer{
+    position:relative;z-index:2;border-top:1px solid var(--line);
+    padding:52px 6vw;max-width:1240px;margin:0 auto;
+    display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between;
+  }
+  footer .fbrand img{height:20px;width:auto;opacity:.9}
+  .flinks{display:flex;flex-wrap:wrap;gap:26px;list-style:none}
+  .flinks a{
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--ink-dim);text-decoration:none;
+    background-image:linear-gradient(90deg,var(--cyan),var(--cyan));
+    background-repeat:no-repeat;background-size:0% 1px;background-position:0 100%;
+    padding-bottom:3px;transition:background-size .35s cubic-bezier(.22,1,.36,1),color .25s;
+  }
+  .flinks a:hover{background-size:100% 1px;color:var(--ink)}
+  .fcopy{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+
+  @media (max-width:900px){
+    #spine-wrap{display:none}
+    .cards{grid-template-columns:1fr}
+    .bento{grid-template-columns:1fr}
+    .tile.s2{grid-column:span 1}
+    .bench{grid-template-columns:1fr;justify-items:start}
+    #nucleus-how{display:none}
+    .scroll-hint{display:none}
+  }
+  @media (max-width:760px){
+    .hero{padding-top:44svh;justify-content:flex-start;padding-bottom:7vh}
+    .hero-scrim{background:linear-gradient(0deg,rgba(3,6,9,.9) 0%,rgba(3,6,9,.55) 42%,transparent 62%)}
+    section{padding:12vh 6vw}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+    #cursor{display:none !important}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="progress" aria-hidden="true"></div>
+<div id="cursor" aria-hidden="true"></div>
+
+<header class="hero" id="top">
+  <canvas id="organism" role="img" aria-label="A living neural organism of glowing dendrites that grows and resolves into the NeuroVault logo"></canvas>
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <nav class="topbar" aria-label="Primary">
+    <a class="brand" href="#top" aria-label="NeuroVault home">
+      <img src="../assets/wordmark-dark.png" alt="NeuroVault" width="140" height="22">
+    </a>
+    <a class="navlink" href="https://github.com/sirdath/NeuroVault">GitHub</a>
+  </nav>
+  <div class="hero-copy">
+    <p class="eyebrow">Local-first AI memory</p>
+    <h1 id="hero-h1">Give your AI a memory that survives the window close.</h1>
+    <p class="hero-sub">Say it once. Any MCP agent (Claude Code, Claude Desktop, Cursor, Codex) recalls it the moment it is relevant. 100% on your machine.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary magnetic" href="https://github.com/sirdath/NeuroVault/releases/latest">Download for Mac<span class="sheen" aria-hidden="true"></span></a>
+      <a class="btn btn-ghost magnetic" href="https://github.com/sirdath/NeuroVault">Star on GitHub</a>
+    </div>
+    <p class="badge-line">Free. MIT-licensed. Local-first.</p>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">SCROLL</div>
+</header>
+
+<main id="main">
+  <div id="spine-wrap" aria-hidden="true">
+    <svg id="spine" xmlns="http://www.w3.org/2000/svg">
+      <path id="spine-path" d="M30 0 V 100" fill="none" stroke="rgba(90,160,230,.28)" stroke-width="1.5"/>
+      <g id="spine-dots"></g>
+      <circle id="spine-pulse" r="4" fill="#ff9d5c" opacity="0" style="filter:drop-shadow(0 0 6px #ff9d5c)"/>
+    </svg>
+  </div>
+
+  <!-- 1 · PROBLEM -->
+  <section id="problem" aria-labelledby="problem-h">
+    <p class="sec-eyebrow"><span class="idx">01</span>The problem</p>
+    <h2 id="problem-h">Your agent starts from zero, every single time.</h2>
+    <p class="lede">Context windows end. Instructions files bloat. Cloud memory belongs to someone else. None of it is memory.</p>
+    <div class="cards">
+      <article class="card">
+        <p class="k">CLAUDE.md, 22K TOKENS</p>
+        <h3>The instructions file band-aid</h3>
+        <p>A hand-maintained context file that bloats every single prompt, burns tokens on every call, and still goes stale the week you stop editing it.</p>
+      </article>
+      <article class="card">
+        <p class="k">SESSION OVER</p>
+        <h3>Amnesia at window close</h3>
+        <p>Everything the conversation learned about you, your project, and your decisions evaporates the moment the chat window closes.</p>
+      </article>
+      <article class="card">
+        <p class="k">NOT YOUR DATA</p>
+        <h3>Memory in a vendor's cloud</h3>
+        <p>Hosted memory lives in a datacenter you cannot see, in a format you cannot read, behind an account you cannot move. That is a lease, not a memory.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 2 · HOW -->
+  <section id="how" aria-labelledby="how-h">
+    <p class="sec-eyebrow"><span class="idx">02</span>How it works</p>
+    <h2 id="how-h">Say it once. Recalled everywhere.</h2>
+    <p class="lede">Tell one agent a fact and it lands in a shared local brain. Every other MCP agent on your machine recalls it the moment it becomes relevant.</p>
+    <figure class="diagram-wrap" aria-label="Diagram: a fact travels from you into the NeuroVault brain, then out to Claude Code, Claude Desktop, Cursor and Codex">
+      <svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="wire" id="wire-in" d="M118 210 C 220 178, 300 234, 388 210"/>
+        <path class="wire" id="wire-a" d="M492 196 C 600 130, 680 84, 774 70"/>
+        <path class="wire" id="wire-b" d="M498 204 C 610 182, 690 170, 774 163"/>
+        <path class="wire" id="wire-c" d="M498 216 C 610 240, 690 252, 774 257"/>
+        <path class="wire" id="wire-d" d="M492 224 C 600 292, 680 338, 774 350"/>
+        <circle cx="92" cy="210" r="9" fill="#59d8ff" opacity=".9"/>
+        <circle cx="92" cy="210" r="18" fill="none" stroke="rgba(89,216,255,.35)"/>
+        <text class="node-t" x="92" y="252" text-anchor="middle">YOU</text>
+        <circle cx="440" cy="210" r="66" fill="none" stroke="rgba(90,160,230,.22)"/>
+        <text class="node-t" x="440" y="306" text-anchor="middle">NEUROVAULT BRAIN</text>
+        <g class="chip"><rect class="chip-r" x="774" y="48" width="156" height="42" rx="12"/><text class="chip-t" x="852" y="74" text-anchor="middle">Claude Code</text></g>
+        <g class="chip"><rect class="chip-r" x="774" y="141" width="156" height="42" rx="12"/><text class="chip-t" x="852" y="167" text-anchor="middle">Claude Desktop</text></g>
+        <g class="chip"><rect class="chip-r" x="774" y="235" width="156" height="42" rx="12"/><text class="chip-t" x="852" y="261" text-anchor="middle">Cursor</text></g>
+        <g class="chip"><rect class="chip-r" x="774" y="328" width="156" height="42" rx="12"/><text class="chip-t" x="852" y="354" text-anchor="middle">Codex</text></g>
+        <g id="how-packets">
+          <circle class="pk" r="8" fill="rgba(89,216,255,.22)"/><circle class="pkc" r="3.4" fill="#9beaff"/>
+          <circle class="pk" r="8" fill="rgba(89,216,255,.22)"/><circle class="pkc" r="3.4" fill="#9beaff"/>
+          <circle class="pk" r="8" fill="rgba(89,216,255,.22)"/><circle class="pkc" r="3.4" fill="#9beaff"/>
+          <circle class="pk" r="8" fill="rgba(89,216,255,.22)"/><circle class="pkc" r="3.4" fill="#9beaff"/>
+        </g>
+      </svg>
+      <canvas id="nucleus-how" aria-hidden="true"></canvas>
+    </figure>
+  </section>
+
+  <!-- 3 · PILLARS -->
+  <section id="pillars" aria-labelledby="pillars-h">
+    <p class="sec-eyebrow"><span class="idx">03</span>Why it holds up</p>
+    <h2 id="pillars-h">Built like infrastructure, not a feature flag.</h2>
+    <p class="lede">Every design choice bends the same way: your memory stays yours, readable, local, and fast.</p>
+    <div class="bento">
+      <article class="tile s2">
+        <span class="mono-label">127.0.0.1:8765</span>
+        <h3>Local-first, actually</h3>
+        <p>The engine binds to loopback only and refuses outside connections. Not "encrypted in transit", not "we do not train on it". The network path does not exist.</p>
+      </article>
+      <article class="tile">
+        <span class="mono-label">BGE-small ONNX</span>
+        <h3>Zero-LLM ingest</h3>
+        <p>On-device embeddings only. No API key, no cloud call, no token bill. Privacy is structural, not a policy page.</p>
+      </article>
+      <article class="tile">
+        <span class="mono-label">Plain .md files</span>
+        <h3>Markdown is canonical</h3>
+        <p>Your brain is a folder of markdown. 10,000 notes weigh about 130 MB, the database is a rebuildable index, and Obsidian opens it as-is.</p>
+      </article>
+      <article class="tile s2">
+        <span class="mono-label">sqlite-vec + BM25 + graph</span>
+        <h3>Hybrid retrieval</h3>
+        <p>Vector similarity, keyword search, and a knowledge graph run in parallel and fuse via reciprocal rank fusion, so the right memory surfaces whether you phrase it like a human or like a grep.</p>
+      </article>
+      <article class="tile s2">
+        <span class="mono-label">tree-sitter</span>
+        <h3>Graphify: code-aware memory</h3>
+        <p>Point it at a repo and it builds an on-device code graph: <code>where_defined</code>, <code>who_calls</code>, <code>blast_radius</code>. 1,887 files indexed in 8.4 seconds.</p>
+      </article>
+      <article class="tile">
+        <span class="mono-label">54 MCP tools</span>
+        <h3>Tiered tool surface</h3>
+        <p>Agents load only the slice they need: minimal 3, lite 8, standard 20, full 54.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 4 · BENCHMARK -->
+  <section id="benchmark" aria-labelledby="benchmark-h">
+    <p class="sec-eyebrow"><span class="idx">04</span>Measured, not vibes</p>
+    <h2 id="benchmark-h">It finds the memory. We checked.</h2>
+    <div class="bench">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#2F7BF6"/><stop offset="1" stop-color="#59d8ff"/>
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r="84" fill="none" stroke="rgba(120,170,230,.12)" stroke-width="7"/>
+          <circle id="gauge-arc" cx="100" cy="100" r="84" fill="none" stroke="url(#gaugeGrad)" stroke-width="7"
+                  stroke-linecap="round" stroke-dasharray="527.8" stroke-dashoffset="31.7"
+                  transform="rotate(-90 100 100)"/>
+        </svg>
+        <div class="gauge-num">
+          <p class="n"><span id="bench-num">94</span><em>%</em></p>
+          <p class="l">RECALL@5 · LONGMEMEVAL</p>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-family:var(--disp);font-weight:700;font-size:1.4rem;margin-bottom:6px">94% recall@5 on LongMemEval</h3>
+        <p class="honest">Retrieval recall, not an end-to-end QA leaderboard number. Full 470-question set, real recall path, 100% on-device.</p>
+        <div class="stats">
+          <div class="stat"><p class="v">0.98</p><p class="k">hit@10</p></div>
+          <div class="stat"><p class="v">118 ms</p><p class="k">median query, 120k-token haystack</p></div>
+          <div class="stat"><p class="v">0 calls</p><p class="k">to any cloud, ever</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · COORDINATION -->
+  <section id="coordination" aria-labelledby="coordination-h">
+    <p class="sec-eyebrow"><span class="idx">05</span>Multi-agent</p>
+    <h2 id="coordination-h">One shared brain. Many agents.</h2>
+    <p class="lede">An agent finishes a task, writes a handoff, and walks away. The next agent opens its inbox and picks the work up, hours or machines apart.</p>
+    <figure class="diagram-wrap" aria-label="Diagram: agent A sends a handoff through the shared brain to agent B's inbox">
+      <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="wire" id="wire-h1" d="M206 150 C 300 110, 380 130, 442 148"/>
+        <path class="wire" id="wire-h2" d="M518 152 C 590 168, 664 186, 752 156"/>
+        <g class="chip"><rect class="chip-r" x="50" y="128" width="156" height="44" rx="12"/><text class="chip-t" x="128" y="155" text-anchor="middle">Agent A</text></g>
+        <text class="node-t" x="128" y="200" text-anchor="middle">FINISHES A TASK</text>
+        <circle cx="480" cy="150" r="34" fill="rgba(47,123,246,.12)" stroke="rgba(89,216,255,.45)"/>
+        <circle cx="480" cy="150" r="7" fill="#59d8ff"/>
+        <text class="node-t" x="480" y="216" text-anchor="middle">SHARED BRAIN</text>
+        <g class="chip"><rect class="chip-r" x="752" y="128" width="158" height="44" rx="12"/><text class="chip-t" x="831" y="155" text-anchor="middle">Agent B</text></g>
+        <text class="node-t" x="831" y="200" text-anchor="middle">READS ITS INBOX</text>
+        <text class="node-t" x="322" y="92" text-anchor="middle" fill="#ff9d5c">handoff()</text>
+        <text class="node-t" x="646" y="92" text-anchor="middle" fill="#ff9d5c">agent_inbox()</text>
+        <g id="coord-packets">
+          <circle class="pk" r="9" fill="rgba(255,157,92,.22)"/><circle class="pkc" r="3.6" fill="#ffc59a"/>
+        </g>
+      </svg>
+    </figure>
+    <p class="coord-note">
+      <b>handoff</b> routes a directed, inert message to another agent. <b>agent_inbox</b> reads the open handoffs addressed to you. <b>session_start(agent=X)</b> scopes wake-up to X's own recent memory plus X's inbox. NeuroVault is a coordination substrate, not an orchestrator: nothing auto-runs, nothing gets scheduled. And every recalled fact carries a 0 to 1 confidence signal, computed on-device with zero LLM calls.
+    </p>
+  </section>
+
+  <!-- 6 · FINAL CTA -->
+  <section id="cta" aria-labelledby="cta-h">
+    <canvas id="nucleus-cta" aria-hidden="true"></canvas>
+    <div class="cta-inner">
+      <p class="sec-eyebrow" style="text-align:center"><span class="idx">06</span>Start remembering</p>
+      <h2 id="cta-h">Your agent should not start from zero every time.</h2>
+      <div class="cta-row">
+        <a class="btn btn-primary magnetic" href="https://github.com/sirdath/NeuroVault/releases/latest">Download for Mac<span class="sheen" aria-hidden="true"></span></a>
+        <a class="btn btn-ghost magnetic" href="https://github.com/sirdath/NeuroVault">Star on GitHub</a>
+      </div>
+      <p class="badge-line" style="margin-top:22px">Free. MIT-licensed. Local-first.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a class="fbrand" href="#top" aria-label="NeuroVault home">
+    <img src="../assets/wordmark-dark.png" alt="NeuroVault" width="130" height="20">
+  </a>
+  <ul class="flinks">
+    <li><a href="https://github.com/sirdath/NeuroVault/blob/main/README.md">Docs</a></li>
+    <li><a href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md">Benchmarks</a></li>
+    <li><a href="https://github.com/sirdath/NeuroVault/blob/main/PRIVACY.md">Privacy</a></li>
+    <li><a href="https://github.com/sirdath/NeuroVault/blob/main/LICENSE">MIT License</a></li>
+  </ul>
+  <p class="fcopy">(c) 2026 NeuroVault contributors</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="../fx/nv-brain-points.js"></script>
+<script>
+(function(){
+"use strict";
+var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var FINE = window.matchMedia("(pointer: fine)").matches;
+var HAS_GSAP = !!(window.gsap && window.ScrollTrigger);
+if (HAS_GSAP) gsap.registerPlugin(ScrollTrigger);
+
+/* ---------- utils ---------- */
+function mulberry32(seed){
+  var a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function clamp01(x){ return x < 0 ? 0 : (x > 1 ? 1 : x); }
+function easeOutExpo(x){ return x >= 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+function easeOutCubic(x){ x = clamp01(x); return 1 - Math.pow(1 - x, 3); }
+function makeSprite(r, g, b){
+  var s = 64, c = document.createElement("canvas");
+  c.width = s; c.height = s;
+  var x = c.getContext("2d");
+  var gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, "rgba(255,255,255,.95)");
+  gr.addColorStop(0.18, "rgba(" + r + "," + g + "," + b + ",.85)");
+  gr.addColorStop(0.5, "rgba(" + r + "," + g + "," + b + ",.22)");
+  gr.addColorStop(1, "rgba(" + r + "," + g + "," + b + ",0)");
+  x.fillStyle = gr;
+  x.fillRect(0, 0, s, s);
+  return c;
+}
+var SPRITE_CYAN = makeSprite(89, 216, 255);
+var SPRITE_EMBER = makeSprite(255, 157, 92);
+var SPRITE_BLUE = makeSprite(47, 123, 246);
+
+/* canvas runner: one rAF per canvas, paused offscreen + when tab hidden */
+function runCanvas(canvas, renderFrame){
+  var running = false, visible = false, raf = 0, last = 0;
+  function loop(now){
+    if (!running) return;
+    var dt = Math.min(0.05, (now - last) / 1000) || 0.016;
+    last = now;
+    renderFrame(dt);
+    raf = requestAnimationFrame(loop);
+  }
+  function update(){
+    var should = visible && !document.hidden;
+    if (should && !running){ running = true; last = performance.now(); raf = requestAnimationFrame(loop); }
+    else if (!should && running){ running = false; cancelAnimationFrame(raf); }
+  }
+  var io = new IntersectionObserver(function(en){ visible = en[0].isIntersecting; update(); }, {threshold: 0});
+  io.observe(canvas);
+  document.addEventListener("visibilitychange", update);
+}
+function fitCanvas(canvas){
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var r = canvas.getBoundingClientRect();
+  var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  var ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx: ctx, w: w, h: h};
+}
+
+/* =================================================================
+   HERO: the living synapse organism
+   ================================================================= */
+(function(){
+  var canvas = document.getElementById("organism");
+  var view = fitCanvas(canvas), ctx = view.ctx;
+  var W = view.w, H = view.h;
+  var IGNITE_AT = 2.5, GROW_DUR = 2.0;
+  var elapsed = 0;
+  var pointer = {x: 0.5, y: 0.5, ex: 0.5, ey: 0.5};
+
+  var segments = [], paths = [], tips = [], particles = [], pulses = [];
+  var logoNodes = [], logoEdges = [], logoCenter = {x: 0, y: 0}, logoScale = 1;
+  var PTS = (window.NV_BRAIN_POINTS || []);
+  var pb = {minx: 1, maxx: 0, miny: 1, maxy: 0};
+  PTS.forEach(function(p){
+    if (p.x < pb.minx) pb.minx = p.x; if (p.x > pb.maxx) pb.maxx = p.x;
+    if (p.y < pb.miny) pb.miny = p.y; if (p.y > pb.maxy) pb.maxy = p.y;
+  });
+  var spanX = Math.max(0.001, pb.maxx - pb.minx), spanY = Math.max(0.001, pb.maxy - pb.miny);
+  var midX = (pb.minx + pb.maxx) / 2, midY = (pb.miny + pb.maxy) / 2;
+
+  function sampleQuad(p0, c, p1, n, out){
+    for (var i = 1; i <= n; i++){
+      var t = i / n, u = 1 - t;
+      out.push({
+        x: u * u * p0.x + 2 * u * t * c.x + t * t * p1.x,
+        y: u * u * p0.y + 2 * u * t * c.y + t * t * p1.y
+      });
+    }
+  }
+
+  function build(){
+    var rand = mulberry32(0x4e56); /* fixed seed: identical layout every load */
+    segments = []; paths = []; tips = []; particles = []; pulses = [];
+    logoNodes = []; logoEdges = [];
+    var mobile = W < 760;
+    var cx = mobile ? W * 0.5 : W * 0.66;
+    var cy = mobile ? H * 0.25 : H * 0.45;
+    logoCenter.x = cx; logoCenter.y = cy;
+    var R = Math.min(W, H);
+    var trunks = mobile ? 4 : 7;             /* density halved on mobile */
+    var maxGen = mobile ? 3 : 4;
+    var ringR = R * 0.055;
+
+    function grow(px, py, angle, len, gen, trail){
+      var curve = (rand() - 0.5) * 1.15;
+      var a2 = angle + curve;
+      var ex = px + Math.cos(a2) * len, ey = py + Math.sin(a2) * len;
+      var mx = (px + ex) / 2, my = (py + ey) / 2;
+      var perp = a2 + Math.PI / 2, off = (rand() - 0.5) * len * 0.6;
+      var c = {x: mx + Math.cos(perp) * off, y: my + Math.sin(perp) * off};
+      var pts = [{x: px, y: py}];
+      sampleQuad({x: px, y: py}, c, {x: ex, y: ey}, 9, pts);
+      segments.push({
+        pts: pts, gen: gen,
+        delay: gen * 0.33 + rand() * 0.15,
+        w: Math.max(0.45, 2.3 - gen * 0.5),
+        a: Math.max(0.10, 0.35 - gen * 0.055)
+      });
+      var trail2 = trail.concat(pts.slice(1));
+      if (gen >= maxGen || (gen > 1 && rand() < 0.08)){
+        tips.push({x: ex, y: ey, ph: rand() * 6.283});
+        var plen = 0;
+        for (var q = 1; q < trail2.length; q++){
+          var dx = trail2[q].x - trail2[q-1].x, dy = trail2[q].y - trail2[q-1].y;
+          plen += Math.sqrt(dx * dx + dy * dy);
+        }
+        paths.push({pts: trail2, len: plen});
+        return;
+      }
+      var kids = 2 + (rand() < 0.35 ? 1 : 0);
+      for (var k = 0; k < kids; k++){
+        var spread = ((k / (kids - 1)) - 0.5) * (1.5 + rand() * 0.8);
+        grow(ex, ey, a2 + spread, len * (0.7 + rand() * 0.16), gen + 1, trail2);
+      }
+    }
+    for (var i = 0; i < trunks; i++){
+      var a = (i / trunks) * Math.PI * 2 + (rand() - 0.5) * 0.55;
+      var sx = cx + Math.cos(a) * ringR, sy = cy + Math.sin(a) * ringR;
+      grow(sx, sy, a, R * (0.15 + rand() * 0.07), 0, [{x: sx, y: sy}]);
+    }
+
+    /* bokeh particles: 3 parallax depth layers (size + alpha encode depth) */
+    var layers = [
+      {n: mobile ? 20 : 40, s: 0.9, a: 0.10, par: 5},
+      {n: mobile ? 14 : 28, s: 1.6, a: 0.17, par: 12},
+      {n: mobile ? 8 : 16, s: 2.6, a: 0.26, par: 22}
+    ];
+    layers.forEach(function(L, li){
+      for (var j = 0; j < L.n; j++){
+        particles.push({
+          x: rand() * W, y: rand() * H,
+          vx: (rand() - 0.5) * 5, vy: (rand() - 0.5) * 4 - 1.5,
+          s: L.s * (0.7 + rand() * 0.7), a: L.a * (0.6 + rand() * 0.7),
+          par: L.par, ph: rand() * 6.283, li: li
+        });
+      }
+    });
+
+    /* logo formation targets */
+    var targetH = mobile ? H * 0.26 : H * 0.46;
+    var maxWpx = mobile ? W * 0.9 : W * 0.56;
+    logoScale = Math.min(targetH / spanY, maxWpx / spanX);
+    /* candidate branch points to launch from */
+    var cands = [];
+    for (var s = 0; s < segments.length; s++){
+      var sp = segments[s].pts;
+      for (var q2 = 0; q2 < sp.length; q2 += 3) cands.push(sp[q2]);
+    }
+    PTS.forEach(function(p, idx){
+      var tx = cx + (p.x - midX) * logoScale;
+      var ty = cy + (p.y - midY) * logoScale;
+      /* fly in from a nearby branch point: best of 7 random candidates */
+      var best = null, bd = 1e18;
+      for (var t7 = 0; t7 < 7; t7++){
+        var cnd = cands[(rand() * cands.length) | 0];
+        var dx = cnd.x - tx, dy = cnd.y - ty, d = dx * dx + dy * dy;
+        if (d < bd){ bd = d; best = cnd; }
+      }
+      var sx2 = best.x + (rand() - 0.5) * 12, sy2 = best.y + (rand() - 0.5) * 12;
+      var mx2 = (sx2 + tx) / 2, my2 = (sy2 + ty) / 2;
+      var col, hl = false;
+      if (p.t === "brain"){ col = "#2F7BF6"; }
+      else { if (idx % 8 === 0){ col = "#59d8ff"; hl = true; } else col = "#cfe0ff"; }
+      logoNodes.push({
+        tx: tx, ty: ty, sx: sx2, sy: sy2,
+        cx: mx2 + (rand() - 0.5) * 60, cy: my2 + (rand() - 0.5) * 60,
+        delay: rand() * 0.55, ph: rand() * 6.283,
+        col: col, hl: hl, r: hl ? 1.9 : 1.5, brain: p.t === "brain"
+      });
+    });
+    /* short-range edges via spatial hash */
+    var spacing = 0.0148 * logoScale, thr = spacing * 1.6, thr2 = thr * thr;
+    var cell = thr, hash = {};
+    logoNodes.forEach(function(n, i){
+      var kx = Math.floor(n.tx / cell), ky = Math.floor(n.ty / cell);
+      var key = kx + "_" + ky;
+      (hash[key] = hash[key] || []).push(i);
+    });
+    var degree = new Array(logoNodes.length).fill(0);
+    logoNodes.forEach(function(n, i){
+      if (degree[i] >= 3) return;
+      var kx = Math.floor(n.tx / cell), ky = Math.floor(n.ty / cell);
+      for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++){
+        var arr = hash[(kx + ox) + "_" + (ky + oy)];
+        if (!arr) continue;
+        for (var z = 0; z < arr.length; z++){
+          var j = arr[z];
+          if (j <= i || degree[i] >= 3 || degree[j] >= 3) continue;
+          var dx = logoNodes[j].tx - n.tx, dy = logoNodes[j].ty - n.ty;
+          if (dx * dx + dy * dy < thr2){
+            logoEdges.push({a: i, b: j, brain: n.brain && logoNodes[j].brain});
+            degree[i]++; degree[j]++;
+          }
+        }
+      }
+    });
+  }
+
+  function pathPoint(path, u){
+    var pts = path.pts, f = u * (pts.length - 1);
+    var i = Math.min(pts.length - 2, Math.floor(f)), t = f - i;
+    return {
+      x: pts[i].x + (pts[i+1].x - pts[i].x) * t,
+      y: pts[i].y + (pts[i+1].y - pts[i].y) * t
+    };
+  }
+
+  function spawnPulse(ember){
+    var p = paths[(Math.random() * paths.length) | 0];
+    if (!p) return;
+    pulses.push({path: p, u: 0, sp: (110 + Math.random() * 90) / Math.max(60, p.len), ember: !!ember});
+  }
+
+  function render(dt){
+    elapsed += dt;
+    var time = elapsed;
+    pointer.ex += (pointer.x - pointer.ex) * 0.06;
+    pointer.ey += (pointer.y - pointer.ey) * 0.06;
+    ctx.clearRect(0, 0, W, H);
+
+    var form = clamp01((elapsed - IGNITE_AT) / 1.2);           /* logo resolve progress */
+    var dim = 1 - 0.6 * easeOutCubic(form);                    /* dendrites settle to 40% */
+
+    /* particles */
+    for (var i = 0; i < particles.length; i++){
+      var pt = particles[i];
+      pt.x += pt.vx * dt; pt.y += pt.vy * dt;
+      if (pt.x < -10) pt.x = W + 10; if (pt.x > W + 10) pt.x = -10;
+      if (pt.y < -10) pt.y = H + 10; if (pt.y > H + 10) pt.y = -10;
+      var px = pt.x + (pointer.ex - 0.5) * pt.par;
+      var py = pt.y + (pointer.ey - 0.5) * pt.par * 0.7;
+      var tw = 0.75 + 0.25 * Math.sin(time * 0.9 + pt.ph);
+      ctx.globalAlpha = pt.a * tw;
+      ctx.drawImage(SPRITE_CYAN, px - pt.s * 3, py - pt.s * 3, pt.s * 6, pt.s * 6);
+    }
+    ctx.globalAlpha = 1;
+
+    /* dendrites: staggered growth reveal */
+    var gt = elapsed / GROW_DUR;
+    ctx.lineCap = "round";
+    for (var s = 0; s < segments.length; s++){
+      var seg = segments[s];
+      var pr = easeOutExpo(clamp01((elapsed - seg.delay) / 0.62));
+      if (pr <= 0.001) continue;
+      var pts = seg.pts, nSeg = pts.length - 1;
+      var f = pr * nSeg, last = Math.floor(f), frac = f - last;
+      ctx.strokeStyle = "rgba(90,160,230," + (seg.a * dim).toFixed(3) + ")";
+      ctx.lineWidth = seg.w;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (var q = 1; q <= last; q++) ctx.lineTo(pts[q].x, pts[q].y);
+      if (last < nSeg && frac > 0){
+        ctx.lineTo(pts[last].x + (pts[last+1].x - pts[last].x) * frac,
+                   pts[last].y + (pts[last+1].y - pts[last].y) * frac);
+      }
+      ctx.stroke();
+    }
+
+    /* branch tips shimmer */
+    if (elapsed > GROW_DUR * 0.8){
+      for (var t2 = 0; t2 < tips.length; t2++){
+        var tip = tips[t2];
+        var sh = 0.5 + 0.5 * Math.sin(time * 2.4 + tip.ph);
+        var sz = 2.4 + sh * 2.2;
+        ctx.globalAlpha = (0.10 + sh * 0.22) * dim;
+        ctx.drawImage(SPRITE_CYAN, tip.x - sz, tip.y - sz, sz * 2, sz * 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* traveling pulses */
+    var want = W < 760 ? 5 : 8;
+    if (elapsed > 0.9 && pulses.length < want && Math.random() < 0.08) spawnPulse(false);
+    for (var u = pulses.length - 1; u >= 0; u--){
+      var pu = pulses[u];
+      pu.u += pu.sp * dt;
+      if (pu.u >= 1){ pulses.splice(u, 1); continue; }
+      var pp = pathPoint(pu.path, pu.u);
+      var spr = pu.ember ? SPRITE_EMBER : SPRITE_CYAN;
+      ctx.globalAlpha = 0.85 * dim + 0.15;
+      ctx.drawImage(spr, pp.x - 9, pp.y - 9, 18, 18);
+      var tail = pathPoint(pu.path, Math.max(0, pu.u - 0.03));
+      ctx.globalAlpha = 0.35 * dim;
+      ctx.drawImage(spr, tail.x - 5, tail.y - 5, 10, 10);
+    }
+    ctx.globalAlpha = 1;
+
+    /* THE IDENTITY MOMENT: logo ignites out of the organism */
+    if (elapsed > IGNITE_AT && logoNodes.length){
+      /* ambient glow beneath the resolved mark */
+      var gw = spanX * logoScale;
+      ctx.globalAlpha = 0.16 * form;
+      ctx.drawImage(SPRITE_BLUE, logoCenter.x - gw * 0.85, logoCenter.y - gw * 0.85, gw * 1.7, gw * 1.7);
+      ctx.globalAlpha = 1;
+
+      var posX = new Array(logoNodes.length), posY = new Array(logoNodes.length);
+      var arrive = new Array(logoNodes.length);
+      for (var n = 0; n < logoNodes.length; n++){
+        var nd = logoNodes[n];
+        var lu = easeOutCubic(clamp01((elapsed - IGNITE_AT - nd.delay) / 0.9));
+        arrive[n] = lu;
+        if (lu >= 1){
+          posX[n] = nd.tx + Math.sin(time * 0.8 + nd.ph) * 1.3;   /* breathing idle drift */
+          posY[n] = nd.ty + Math.cos(time * 0.63 + nd.ph) * 1.3;
+        } else {
+          var v = 1 - lu;
+          posX[n] = v * v * nd.sx + 2 * v * lu * nd.cx + lu * lu * nd.tx;
+          posY[n] = v * v * nd.sy + 2 * v * lu * nd.cy + lu * lu * nd.ty;
+        }
+      }
+      /* short-range edges fade in once nodes settle */
+      if (form > 0.35){
+        var ea = 0.20 * clamp01((form - 0.35) / 0.65);
+        ctx.lineWidth = 0.7;
+        ctx.strokeStyle = "rgba(47,123,246," + ea.toFixed(3) + ")";
+        ctx.beginPath();
+        for (var e = 0; e < logoEdges.length; e++){
+          var ed = logoEdges[e];
+          if (!ed.brain) continue;
+          if (arrive[ed.a] < 0.95 || arrive[ed.b] < 0.95) continue;
+          ctx.moveTo(posX[ed.a], posY[ed.a]); ctx.lineTo(posX[ed.b], posY[ed.b]);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(207,224,255," + (ea * 0.9).toFixed(3) + ")";
+        ctx.beginPath();
+        for (var e2 = 0; e2 < logoEdges.length; e2++){
+          var ed2 = logoEdges[e2];
+          if (ed2.brain) continue;
+          if (arrive[ed2.a] < 0.95 || arrive[ed2.b] < 0.95) continue;
+          ctx.moveTo(posX[ed2.a], posY[ed2.a]); ctx.lineTo(posX[ed2.b], posY[ed2.b]);
+        }
+        ctx.stroke();
+      }
+      /* nodes */
+      for (var n2 = 0; n2 < logoNodes.length; n2++){
+        var nd2 = logoNodes[n2], lu2 = arrive[n2];
+        if (lu2 <= 0) continue;
+        ctx.globalAlpha = 0.25 + 0.75 * lu2;
+        ctx.fillStyle = nd2.col;
+        ctx.beginPath();
+        ctx.arc(posX[n2], posY[n2], nd2.r, 0, 6.2832);
+        ctx.fill();
+        if (nd2.hl){
+          ctx.globalAlpha = 0.5 * lu2;
+          ctx.drawImage(SPRITE_CYAN, posX[n2] - 4, posY[n2] - 4, 8, 8);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  build();
+
+  if (REDUCED){
+    /* one static frame: fully grown organism + resolved logo, no loop */
+    elapsed = 30;
+    render(0);
+  } else {
+    runCanvas(canvas, render);
+    canvas.parentElement.addEventListener("pointermove", function(e){
+      pointer.x = e.clientX / W; pointer.y = e.clientY / H;
+    }, {passive: true});
+  }
+
+  var rsT;
+  window.addEventListener("resize", function(){
+    clearTimeout(rsT);
+    rsT = setTimeout(function(){
+      var v = fitCanvas(canvas); ctx = v.ctx; W = v.w; H = v.h;
+      build();
+      if (REDUCED){ elapsed = 30; render(0); }
+    }, 160);
+  });
+})();
+
+/* =================================================================
+   NUCLEUS renderer (HOW section mini + final CTA reprise)
+   ================================================================= */
+function nucleus(canvasId, opts){
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  var view = fitCanvas(canvas), ctx = view.ctx, W = view.w, H = view.h;
+  var rand = mulberry32(opts.seed);
+  var fil = [], time = 0, embers = [];
+  var nFil = opts.filaments;
+  for (var i = 0; i < nFil; i++){
+    fil.push({a: (i / nFil) * 6.2832 + (rand() - 0.5) * 0.4, ph: rand() * 6.283,
+              amp: 0.18 + rand() * 0.22, sp: 0.4 + rand() * 0.5, r1: 0.62 + rand() * 0.34});
+  }
+  var sparks = [];
+  for (var j = 0; j < opts.sparks; j++) sparks.push({ph: rand() * 6.283, sp: 0.3 + rand() * 0.4, rr: 0.35 + rand() * 0.4});
+
+  function render(dt){
+    time += dt;
+    var cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.46;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = opts.coreAlpha;
+    ctx.drawImage(SPRITE_BLUE, cx - R * 0.75, cy - R * 0.75, R * 1.5, R * 1.5);
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+    for (var i = 0; i < fil.length; i++){
+      var f = fil[i];
+      ctx.strokeStyle = "rgba(90,160,230," + opts.filAlpha + ")";
+      ctx.beginPath();
+      for (var s = 0; s <= 12; s++){
+        var t = s / 12;
+        var rr = R * (0.14 + t * f.r1);
+        var a = f.a + time * 0.06 + Math.sin(t * 5 + time * f.sp + f.ph) * f.amp * t;
+        var x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    for (var k = 0; k < sparks.length; k++){
+      var sk = sparks[k];
+      var a2 = sk.ph + time * sk.sp;
+      var x2 = cx + Math.cos(a2) * R * sk.rr, y2 = cy + Math.sin(a2) * R * sk.rr;
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(SPRITE_CYAN, x2 - 5, y2 - 5, 10, 10);
+    }
+    ctx.globalAlpha = 1;
+    for (var e = embers.length - 1; e >= 0; e--){
+      var em = embers[e];
+      em.r += dt * R * 1.4; em.a -= dt * 0.8;
+      if (em.a <= 0){ embers.splice(e, 1); continue; }
+      ctx.strokeStyle = "rgba(255,157,92," + em.a.toFixed(3) + ")";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, em.r, 0, 6.2832); ctx.stroke();
+    }
+  }
+  if (REDUCED){ render(0); }
+  else runCanvas(canvas, render);
+  var rsT;
+  window.addEventListener("resize", function(){
+    clearTimeout(rsT);
+    rsT = setTimeout(function(){
+      var v = fitCanvas(canvas); ctx = v.ctx; W = v.w; H = v.h;
+      if (REDUCED) render(0);
+    }, 160);
+  });
+  return {fire: function(){ if (!REDUCED) embers.push({r: 10, a: 0.9}); }};
+}
+nucleus("nucleus-how", {seed: 0x4e57, filaments: 22, sparks: 3, coreAlpha: 0.35, filAlpha: 0.4});
+var ctaNucleus = nucleus("nucleus-cta", {seed: 0x4e58, filaments: 30, sparks: 5, coreAlpha: 0.18, filAlpha: 0.16});
+
+/* =================================================================
+   SVG diagram packets (single gsap ticker, paused offscreen)
+   ================================================================= */
+(function(){
+  if (REDUCED || !HAS_GSAP) return;
+  function packetLoop(svgSel, inIds, outIds, groupId, dur, split){
+    var root = document.querySelector(svgSel);
+    if (!root) return;
+    var inP = inIds.map(function(id){ return document.getElementById(id); });
+    var outP = outIds.map(function(id){ return document.getElementById(id); });
+    var inL = inP.map(function(p){ return p.getTotalLength(); });
+    var outL = outP.map(function(p){ return p.getTotalLength(); });
+    var group = document.getElementById(groupId);
+    var glows = group.querySelectorAll(".pk"), cores = group.querySelectorAll(".pkc");
+    var n = glows.length, running = false, t0 = 0;
+    function tick(){
+      var now = (performance.now() - t0) / 1000;
+      for (var i = 0; i < n; i++){
+        var ph = ((now / dur) + i / n) % 1;
+        var pt;
+        if (ph < split){
+          var p = inP[i % inP.length];
+          pt = p.getPointAtLength((ph / split) * inL[i % inL.length]);
+        } else {
+          var o = outP[i % outP.length];
+          pt = o.getPointAtLength(((ph - split) / (1 - split)) * outL[i % outL.length]);
+        }
+        glows[i].setAttribute("cx", pt.x); glows[i].setAttribute("cy", pt.y);
+        cores[i].setAttribute("cx", pt.x); cores[i].setAttribute("cy", pt.y);
+      }
+    }
+    var io = new IntersectionObserver(function(en){
+      var vis = en[0].isIntersecting;
+      if (vis && !running){ running = true; t0 = performance.now(); gsap.ticker.add(tick); }
+      else if (!vis && running){ running = false; gsap.ticker.remove(tick); }
+    }, {threshold: 0});
+    io.observe(root);
+  }
+  packetLoop("#how .diagram-wrap svg", ["wire-in"], ["wire-a", "wire-b", "wire-c", "wire-d"], "how-packets", 4.2, 0.42);
+  packetLoop("#coordination .diagram-wrap svg", ["wire-h1"], ["wire-h2"], "coord-packets", 3.6, 0.5);
+})();
+
+/* =================================================================
+   Scroll narrative: spine, reveals, gauge, counter
+   All initial hidden states are set from JS so nothing is stuck
+   at opacity 0 if JS or GSAP fails.
+   ================================================================= */
+(function(){
+  if (!HAS_GSAP) return;
+
+  /* hero entrance: staggered word-mask reveal timed to the growth */
+  if (!REDUCED){
+    var h1 = document.getElementById("hero-h1");
+    var words = h1.textContent.trim().split(/\s+/);
+    h1.textContent = "";
+    words.forEach(function(w, i){
+      var outer = document.createElement("span"); outer.className = "w";
+      var inner = document.createElement("span"); inner.className = "wi";
+      inner.textContent = w;
+      outer.appendChild(inner); h1.appendChild(outer);
+      if (i < words.length - 1) h1.appendChild(document.createTextNode(" "));
+    });
+    var tl = gsap.timeline({delay: 0.15});
+    tl.from(".eyebrow", {y: 14, opacity: 0, duration: 0.8, ease: "power3.out"}, 0.2)
+      .from("#hero-h1 .wi", {yPercent: 115, duration: 1.0, ease: "expo.out", stagger: 0.065}, 0.45)
+      .from(".hero-sub", {y: 18, opacity: 0, duration: 0.9, ease: "power3.out"}, 1.25)
+      .from(".hero .cta-row .btn", {y: 16, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.1}, 1.5)
+      .from(".hero .badge-line, .scroll-hint", {opacity: 0, duration: 1.0}, 1.9)
+      .from(".topbar", {y: -16, opacity: 0, duration: 0.9, ease: "power3.out"}, 0.35);
+  }
+
+  /* section reveals */
+  if (!REDUCED){
+    gsap.utils.toArray("main section").forEach(function(sec){
+      var items = sec.querySelectorAll(".sec-eyebrow, h2, .lede, .card, .tile, .diagram-wrap, .bench, .coord-note, .cta-inner");
+      gsap.from(items, {
+        y: 34, opacity: 0, duration: 0.9, ease: "power3.out", stagger: 0.09,
+        scrollTrigger: {trigger: sec, start: "top 74%", once: true}
+      });
+    });
+  }
+
+  /* axon spine down the left gutter */
+  var spineSvg = document.getElementById("spine");
+  var spinePath = document.getElementById("spine-path");
+  var spinePulse = document.getElementById("spine-pulse");
+  var dotsG = document.getElementById("spine-dots");
+  var main = document.getElementById("main");
+  var sections = gsap.utils.toArray("main section");
+  var spineLen = 0, yLUT = [];
+
+  function buildSpine(){
+    var H = main.scrollHeight;
+    spineSvg.setAttribute("width", "60");
+    spineSvg.setAttribute("height", H);
+    spineSvg.setAttribute("viewBox", "0 0 60 " + H);
+    var d = "M " + (30 + Math.sin(0) * 11) + " 0";
+    for (var y = 180; y <= H; y += 180){
+      var x = 30 + Math.sin(y * 0.006) * 11;
+      d += " L " + x.toFixed(1) + " " + y;
+    }
+    spinePath.setAttribute("d", d);
+    spineLen = spinePath.getTotalLength();
+    yLUT = [];
+    for (var i = 0; i <= 220; i++){
+      yLUT.push(spinePath.getPointAtLength((i / 220) * spineLen).y);
+    }
+    dotsG.innerHTML = "";
+    sections.forEach(function(sec){
+      var yy = sec.offsetTop + 130;
+      var xx = 30 + Math.sin(yy * 0.006) * 11;
+      var c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", xx); c.setAttribute("cy", yy); c.setAttribute("r", 3);
+      c.setAttribute("fill", "rgba(89,216,255,.8)");
+      dotsG.appendChild(c);
+    });
+  }
+  function lenAtY(y){
+    for (var i = 0; i < yLUT.length; i++){
+      if (yLUT[i] >= y) return (i / 220) * spineLen;
+    }
+    return spineLen;
+  }
+  buildSpine();
+
+  if (!REDUCED){
+    spinePath.style.strokeDasharray = spineLen;
+    spinePath.style.strokeDashoffset = spineLen;
+    gsap.to(spinePath, {
+      strokeDashoffset: 0, ease: "none",
+      scrollTrigger: {trigger: main, start: "top 70%", end: "bottom bottom", scrub: 0.6}
+    });
+    /* ember pulse travels the drawn segment on each section arrival */
+    var prevLen = {v: 0};
+    sections.forEach(function(sec, i){
+      ScrollTrigger.create({
+        trigger: sec, start: "top 62%",
+        onEnter: function(){
+          var target = lenAtY(sec.offsetTop + 130);
+          var proxy = {l: prevLen.v};
+          prevLen.v = target;
+          gsap.to(spinePulse, {opacity: 1, duration: 0.2});
+          gsap.to(proxy, {
+            l: target, duration: 1.1, ease: "power2.inOut",
+            onUpdate: function(){
+              var pt = spinePath.getPointAtLength(proxy.l);
+              spinePulse.setAttribute("cx", pt.x); spinePulse.setAttribute("cy", pt.y);
+            },
+            onComplete: function(){ gsap.to(spinePulse, {opacity: 0, duration: 0.6, delay: 0.2}); }
+          });
+          if (sec.id === "cta" && ctaNucleus) ctaNucleus.fire();
+        }
+      });
+    });
+  } else {
+    spinePath.style.strokeDasharray = "none";
+  }
+
+  /* benchmark: ring gauge draws + number counts up */
+  var arc = document.getElementById("gauge-arc");
+  var num = document.getElementById("bench-num");
+  var CIRC = 527.8, FINAL = CIRC * (1 - 0.94);
+  if (!REDUCED){
+    gsap.set(arc, {strokeDashoffset: CIRC});
+    var counted = {v: 0};
+    ScrollTrigger.create({
+      trigger: "#benchmark", start: "top 70%", once: true,
+      onEnter: function(){
+        gsap.to(arc, {strokeDashoffset: FINAL, duration: 1.8, ease: "power3.inOut"});
+        gsap.to(counted, {
+          v: 94, duration: 1.8, ease: "power3.inOut",
+          onUpdate: function(){ num.textContent = Math.round(counted.v); }
+        });
+      }
+    });
+  }
+
+  var rsT2;
+  window.addEventListener("resize", function(){
+    clearTimeout(rsT2);
+    rsT2 = setTimeout(function(){ buildSpine(); ScrollTrigger.refresh(); }, 220);
+  });
+})();
+
+/* =================================================================
+   Micro-interactions
+   ================================================================= */
+/* scroll progress bar */
+(function(){
+  var bar = document.getElementById("progress"), ticking = false;
+  function upd(){
+    ticking = false;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = "scaleX(" + (max > 0 ? window.scrollY / max : 0) + ")";
+  }
+  window.addEventListener("scroll", function(){
+    if (!ticking){ ticking = true; requestAnimationFrame(upd); }
+  }, {passive: true});
+  upd();
+})();
+
+/* custom cursor: glowing dot with spring follow (fine pointers only) */
+(function(){
+  if (!FINE || REDUCED) return;
+  document.body.classList.add("has-cursor");
+  var cur = document.getElementById("cursor");
+  var tx = -100, ty = -100, x = -100, y = -100, scale = 1, tScale = 1;
+  document.addEventListener("pointermove", function(e){
+    tx = e.clientX; ty = e.clientY;
+    var el = e.target.closest ? e.target.closest("a,button") : null;
+    tScale = el ? 2.1 : 1;
+  }, {passive: true});
+  (function loop(){
+    x += (tx - x) * 0.18; y += (ty - y) * 0.18;
+    scale += (tScale - scale) * 0.15;
+    cur.style.transform = "translate(" + (x - 7) + "px," + (y - 7) + "px) scale(" + scale.toFixed(3) + ")";
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* magnetic buttons: translate up to 8px toward cursor */
+(function(){
+  if (!FINE || REDUCED) return;
+  document.querySelectorAll(".magnetic").forEach(function(btn){
+    btn.addEventListener("pointermove", function(e){
+      var r = btn.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+      var dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+      btn.style.transform = "translate(" + (dx * 8).toFixed(1) + "px," + (dy * 8).toFixed(1) + "px)";
+    });
+    btn.addEventListener("pointerleave", function(){
+      btn.style.transition = "transform .5s cubic-bezier(.22,1,.36,1)";
+      btn.style.transform = "translate(0,0)";
+      setTimeout(function(){ btn.style.transition = ""; }, 500);
+    });
+  });
+})();
+
+/* bento glow-follow: radial gradient tracks cursor via CSS vars */
+(function(){
+  if (!FINE) return;
+  document.querySelectorAll(".tile").forEach(function(tile){
+    tile.addEventListener("pointermove", function(e){
+      var r = tile.getBoundingClientRect();
+      tile.style.setProperty("--mx", (e.clientX - r.left) + "px");
+      tile.style.setProperty("--my", (e.clientY - r.top) + "px");
+    }, {passive: true});
+  });
+})();
+})();
+</script>
+</body>
+</html>

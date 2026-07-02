@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroVault. The Memory Archive.</title>
+<meta name="description" content="Claude forgets you after every conversation. NeuroVault does not. A local-first, open source memory system for AI agents. Specimen 001: human memory, archived locally.">
+<link rel="icon" href="../assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper0:#eef0f4;
+  --paper1:#f7f8fa;
+  --ink:#0b0e14;
+  --hair:rgba(11,14,20,.14);
+  --hair2:rgba(11,14,20,.26);
+  --muted:rgba(11,14,20,.66);
+  --faint:rgba(11,14,20,.44);
+  --blue:#2F7BF6;
+  --blue-deep:#1E5FD9;
+  --disp:'Fraunces',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --uease:cubic-bezier(.4,0,.2,1);
+  --dur-fast:140ms;
+  --dur:260ms;
+  --dur-slow:480ms;
+  --pad:clamp(20px,4.5vw,64px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  background:linear-gradient(180deg,var(--paper0) 0%,var(--paper1) 38%,var(--paper1) 100%);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.55;
+  overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+}
+/* paper grain */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:70;
+  pointer-events:none;
+  opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+::selection{background:var(--blue);color:#fff}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--blue-deep);outline-offset:3px}
+img,svg{display:block;max-width:100%}
+
+.skip{
+  position:fixed;left:16px;top:-60px;z-index:100;
+  background:var(--ink);color:var(--paper1);
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 16px;text-decoration:none;transition:top var(--dur-fast) var(--uease);
+}
+.skip:focus{top:12px}
+
+/* ------- chrome ------- */
+.chrome{
+  position:fixed;inset:0 0 auto 0;z-index:60;
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:20px var(--pad);
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  pointer-events:none;
+}
+.chrome a,.chrome span{pointer-events:auto}
+.brand{font-weight:500;text-decoration:none;color:var(--ink)}
+.brand em{font-style:normal;color:var(--faint)}
+.chrome-r{display:flex;gap:28px;align-items:baseline;color:var(--muted)}
+.chrome-r a{text-decoration:none;color:var(--muted);position:relative}
+.chrome-r a::after{content:"";position:absolute;left:0;bottom:-3px;height:1px;width:100%;background:var(--ink);transform:scaleX(0);transform-origin:right;transition:transform var(--dur) var(--uease)}
+.chrome-r a:hover::after{transform:scaleX(1);transform-origin:left}
+.plateno{font-variant-numeric:tabular-nums}
+.plateno b{font-weight:500;color:var(--ink)}
+
+/* ------- buttons ------- */
+.btn{
+  display:inline-block;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);text-decoration:none;
+  border:1px solid var(--ink);
+  padding:17px 28px;
+  background:linear-gradient(var(--ink),var(--ink)) no-repeat left center / 0% 100%;
+  transition:background-size var(--dur) var(--uease),color var(--dur) var(--uease);
+}
+.btn:hover{background-size:100% 100%;color:var(--paper1)}
+.btn:active{transform:scale(.98)}
+.btn-solid{background:var(--ink);color:var(--paper1);border-color:var(--ink)}
+.btn-solid:hover{background:var(--ink);color:var(--paper1);opacity:.88}
+
+/* ------- hero ------- */
+#heroWrap{height:auto}
+.js #heroWrap{height:220vh}
+.hero{
+  position:sticky;top:0;
+  height:100vh;height:100svh;
+  min-height:620px;
+  overflow:hidden;
+}
+html.prm #heroWrap,html.nojs #heroWrap{height:auto}
+#sculpture{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;
+  will-change:opacity;
+}
+.hero-ui{
+  position:relative;z-index:2;height:100%;
+  will-change:opacity;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  padding:84px var(--pad) 40px;
+  gap:clamp(16px,2.6vh,28px);
+}
+/* the mark, stamped from its own 499 points: instant identity */
+.stamp{width:clamp(60px,9.5vh,88px)}
+.stamp svg{width:100%;height:auto}
+.plate-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--muted);
+  border:1px solid var(--hair2);
+  padding:9px 18px;
+  display:inline-flex;gap:14px;align-items:center;
+}
+.plate-label i{font-style:normal;color:var(--ink);font-weight:500}
+.plate-label::before{content:"";width:5px;height:5px;background:var(--blue)}
+.hero h1{
+  font-family:var(--disp);font-weight:300;
+  font-size:clamp(2.35rem,6vw,5.4rem);
+  line-height:1.04;letter-spacing:-0.02em;
+  font-variation-settings:"opsz" 130;
+  max-width:16ch;
+}
+.hero h1 .hl{display:block;overflow:hidden}
+.hero h1 .hl-in{display:block}
+.hero h1 em{font-style:italic;font-weight:400}
+.hero-sub{
+  color:var(--muted);font-size:clamp(.94rem,1.4vw,1.05rem);
+  max-width:52ch;
+}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center}
+.hero-badges{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);
+}
+/* flanking annotations */
+.specs{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+  display:flex;flex-direction:column;gap:30px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);
+  width:190px;
+}
+.specs-l{left:var(--pad);text-align:left}
+.specs-r{right:var(--pad);text-align:right}
+.spec b{display:block;color:var(--ink);font-weight:500;font-size:11px}
+.spec{position:relative;line-height:1.7}
+.specs-l .spec{padding-right:0}
+.specs-l .spec::after,.specs-r .spec::after{
+  content:"";position:absolute;top:8px;width:38px;height:1px;background:var(--hair2);
+}
+.specs-l .spec::after{right:-52px}
+.specs-r .spec::after{left:-52px}
+.spec.tick::before{
+  content:"";position:absolute;top:6px;width:5px;height:5px;background:var(--blue);
+}
+.specs-l .spec.tick::before{right:-58px}
+.specs-r .spec.tick::before{left:-58px}
+.figcap{
+  position:absolute;left:0;right:0;bottom:26px;z-index:2;
+  text-align:center;
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);
+  opacity:0;
+}
+html.prm .figcap,html.nojs .figcap{display:none}
+.scrollcue{
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;
+  font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);
+}
+
+/* ------- shared section grammar ------- */
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--pad)}
+section.ch-sec{padding:clamp(90px,13vh,170px) 0}
+.ch-head{
+  display:flex;align-items:baseline;gap:clamp(16px,3vw,36px);
+  border-top:1px solid var(--hair2);
+  padding-top:26px;
+  margin-bottom:clamp(40px,6vh,76px);
+}
+.ch-num{
+  font-family:var(--mono);font-weight:400;
+  font-size:clamp(2.6rem,6vw,4.6rem);line-height:.9;
+  color:rgba(47,123,246,.38);
+  font-variant-numeric:tabular-nums;
+}
+.ch-head h2{
+  font-family:var(--mono);font-weight:500;font-size:clamp(.72rem,1.1vw,.82rem);
+  letter-spacing:.26em;text-transform:uppercase;
+}
+.ch-rule{flex:1;height:1px;background:var(--hair);align-self:center}
+.ch-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);white-space:nowrap;
+}
+.pull{
+  font-family:var(--disp);font-weight:300;font-style:italic;
+  font-size:clamp(1.9rem,4.4vw,3.9rem);
+  line-height:1.12;letter-spacing:-0.015em;
+  font-variation-settings:"opsz" 100;
+  max-width:22ch;
+  margin-bottom:clamp(44px,7vh,84px);
+}
+.pull .q{color:var(--blue)}
+
+/* ------- index rows ------- */
+.irows{border-top:1px solid var(--hair2)}
+.irow{border-bottom:1px solid var(--hair);position:relative}
+.irow::after{
+  content:"";position:absolute;left:0;bottom:-1px;height:1px;width:100%;
+  background:var(--ink);transform:scaleX(0);transform-origin:left;
+  transition:transform .42s var(--ease);
+}
+.irow:hover::after,.irow:focus-within::after{transform:scaleX(1)}
+.irow-i{font-family:var(--mono);font-size:11px;color:var(--blue);letter-spacing:.1em}
+.irow-t{
+  font-family:var(--disp);font-weight:400;
+  font-size:clamp(1.25rem,2.4vw,1.8rem);letter-spacing:-0.01em;line-height:1.15;
+}
+.irow-m{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap;
+}
+/* problem rows: everything visible, no interaction required */
+.prow-h{
+  display:grid;
+  grid-template-columns:56px 1fr auto;
+  align-items:baseline;gap:18px;
+  padding:28px 4px 30px;
+}
+.prow-p{
+  color:var(--muted);max-width:60ch;
+  margin-top:10px;font-size:.97rem;
+}
+/* principles: specimen-sheet card grid, nothing gated behind hover */
+.pgrid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:1px;background:var(--hair);
+  border:1px solid var(--hair2);
+  outline:1px solid var(--hair);outline-offset:6px;
+}
+.pcard{
+  background:var(--paper1);
+  padding:clamp(24px,3.4vw,42px);
+  display:flex;flex-direction:column;gap:13px;
+  position:relative;overflow:hidden;
+}
+.pcard::after{
+  content:"";position:absolute;left:0;top:0;height:2px;width:100%;
+  background:var(--blue);transform:scaleX(0);transform-origin:left;
+  transition:transform .42s var(--ease);
+}
+.pcard:hover::after{transform:scaleX(1)}
+.pcard header{display:flex;justify-content:space-between;align-items:flex-start}
+.pc-i{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--blue)}
+.pc-g{width:30px;height:30px;flex:none}
+.pc-g *{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.pc-g .b{stroke:var(--blue)}
+.pcard h3{
+  font-family:var(--disp);font-weight:400;
+  font-size:clamp(1.2rem,2vw,1.55rem);letter-spacing:-0.01em;line-height:1.15;
+}
+.pcard p{color:var(--muted);font-size:.95rem;max-width:56ch}
+.pc-m{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);
+  margin-top:auto;padding-top:14px;border-top:1px solid var(--hair);
+}
+@media (max-width:760px){.pgrid{grid-template-columns:1fr}}
+@media (max-width:660px){
+  .ch-tag{display:none}
+  .ch-head{gap:14px}
+}
+@media (max-width:720px){
+  .prow-h{grid-template-columns:34px 1fr;gap:12px}
+  .irow-m{display:none}
+}
+
+/* ------- plates (technical drawings) ------- */
+.plate{
+  border:1px solid var(--hair2);
+  outline:1px solid var(--hair);
+  outline-offset:6px;
+  padding:clamp(20px,3.5vw,44px);
+  background:rgba(255,255,255,.35);
+}
+.plate-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.plate-scroll svg{min-width:780px;width:100%;height:auto}
+.plate-cap{
+  margin-top:22px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);line-height:2;
+  max-width:90ch;
+}
+.plate-cap b{color:var(--ink);font-weight:500}
+svg .bx{fill:none;stroke:var(--ink);stroke-width:1.25}
+svg .ln{fill:none;stroke:var(--hair2);stroke-width:1}
+svg .lnk{fill:none;stroke:var(--ink);stroke-width:1}
+svg text{font-family:var(--mono);letter-spacing:.08em;fill:var(--ink)}
+svg .t1{font-size:12px;font-weight:500}
+svg .t2{font-size:9.5px;fill:var(--muted)}
+svg .t0{font-size:11px;font-weight:500;fill:var(--blue)}
+svg .tf{font-size:9px;fill:var(--faint)}
+
+/* ------- exhibit figure ------- */
+.exhibit{margin:clamp(80px,12vh,150px) auto 0;max-width:920px}
+.exhibit .frame{
+  border:1px solid var(--hair2);
+  outline:1px solid var(--hair);outline-offset:8px;
+  padding:14px;background:#fff;
+}
+.exhibit img{width:100%;height:auto}
+.exhibit figcaption{
+  margin-top:20px;text-align:center;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ------- evidence ------- */
+.evid{
+  display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:center;
+}
+.bignum{
+  font-family:var(--disp);font-weight:300;
+  font-size:clamp(6.5rem,19vw,15rem);
+  line-height:.9;letter-spacing:-0.04em;
+  font-variation-settings:"opsz" 144;
+  font-variant-numeric:tabular-nums;
+}
+.bignum sup{font-size:.28em;font-weight:400;vertical-align:.9em;letter-spacing:0}
+.bignum-l{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+  margin-top:14px;
+}
+.honest{
+  font-family:var(--disp);font-style:italic;font-weight:300;
+  font-size:clamp(1.15rem,1.9vw,1.5rem);line-height:1.35;
+  margin-bottom:16px;max-width:30ch;
+}
+.plain{
+  color:var(--muted);font-size:.95rem;max-width:46ch;
+  margin-bottom:32px;
+  padding-left:14px;border-left:2px solid var(--blue);
+}
+.stbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+.stbl caption{text-align:left;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);padding-bottom:12px}
+.stbl th,.stbl td{border-top:1px solid var(--hair);padding:13px 4px;text-align:left;font-weight:400}
+.stbl th{text-transform:uppercase;color:var(--muted);font-size:10px}
+.stbl td:last-child,.stbl th:last-child{text-align:right}
+.stbl tr:last-child td{border-bottom:1px solid var(--hair2)}
+.stbl .em{color:var(--ink);font-weight:500}
+.bench-link{
+  display:inline-block;margin-top:22px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;border-bottom:1px solid var(--hair2);
+  padding-bottom:3px;transition:color var(--dur-fast) var(--uease),border-color var(--dur-fast) var(--uease);
+}
+.bench-link:hover{color:var(--blue-deep);border-color:var(--blue-deep)}
+@media (max-width:860px){.evid{grid-template-columns:1fr}}
+
+/* ------- acquire (dark) ------- */
+.acquire{
+  background:var(--ink);color:var(--paper0);
+  padding:clamp(110px,18vh,220px) 0;
+  position:relative;
+}
+.acquire .wrap{text-align:center;display:flex;flex-direction:column;align-items:center;gap:30px}
+.acquire .ch-head h2{color:rgba(238,240,244,.9)}
+.acq-title{
+  font-family:var(--disp);font-weight:300;
+  font-size:clamp(2.5rem,6.5vw,5.5rem);line-height:1.02;letter-spacing:-0.02em;
+  font-variation-settings:"opsz" 130;
+  max-width:14ch;
+}
+.acquire p{color:rgba(238,240,244,.68);max-width:46ch;font-size:1rem}
+.acq-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.btn-blue{
+  background:var(--blue-deep);border-color:var(--blue-deep);color:#fff;
+  background-image:none;
+  transition:background-color var(--dur) var(--uease);
+}
+.btn-blue:hover{background-color:#1a53c0;color:#fff}
+.btn-ghost{
+  color:var(--paper0);border-color:rgba(238,240,244,.5);
+  background:linear-gradient(var(--paper0),var(--paper0)) no-repeat left center / 0% 100%;
+}
+.btn-ghost:hover{background-size:100% 100%;color:var(--ink)}
+.acq-note{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(238,240,244,.55);
+}
+/* exhibit c: the brain, in ascii */
+.ascii-ex{
+  border:1px solid rgba(238,240,244,.16);
+  outline:1px solid rgba(238,240,244,.07);outline-offset:6px;
+  padding:12px 16px;background:rgba(255,255,255,.02);
+}
+.ascii-ex img{height:132px;width:auto;opacity:.9}
+.acq-fig{
+  font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(238,240,244,.4) !important;
+}
+.acquire ::selection{background:var(--blue);color:#fff}
+
+/* ------- footer colophon ------- */
+footer{
+  padding:44px 0 54px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);
+}
+.colophon{
+  display:flex;flex-wrap:wrap;gap:18px 36px;justify-content:space-between;align-items:baseline;
+  border-top:1px solid var(--hair2);padding-top:26px;
+}
+.colophon nav{display:flex;gap:22px;flex-wrap:wrap}
+.colophon a{text-decoration:none;color:var(--muted);position:relative}
+.colophon a::after{content:"";position:absolute;left:0;bottom:-3px;height:1px;width:100%;background:var(--ink);transform:scaleX(0);transform-origin:right;transition:transform var(--dur) var(--uease)}
+.colophon a:hover::after{transform:scaleX(1);transform-origin:left}
+.colophon .set{width:100%;color:var(--faint)}
+
+@media (max-width:960px){
+  .specs{position:static;transform:none;width:100%;order:9;
+    display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;text-align:left;
+    max-width:560px;margin-top:8px;
+  }
+  .specs-r{text-align:left}
+  .spec::after,.spec.tick::before{display:none}
+  .specs-r .spec::after{display:none}
+  .hero{min-height:0}
+  .hero-ui{justify-content:flex-start;padding-top:96px;overflow:hidden}
+  .scrollcue{display:none}
+}
+@media (max-width:960px) and (max-height:760px){
+  .specs{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important;animation-iteration-count:1 !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="chrome">
+  <a class="brand" href="#top">NEUROVAULT <em>/ ARCHIVE</em></a>
+  <div class="chrome-r">
+    <a href="https://github.com/sirdath/NeuroVault">GITHUB</a>
+    <span class="plateno" aria-hidden="true">PL. <b id="pgv">000</b> / 100</span>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO / SPECIMEN 001 ============ -->
+<div id="heroWrap">
+  <section class="hero" id="top" aria-label="Specimen 001, human memory archived locally">
+    <canvas id="sculpture" aria-hidden="true"></canvas>
+
+    <div class="hero-ui" id="heroUi">
+      <div class="stamp" id="stamp" role="img" aria-label="The NeuroVault mark, drawn from its 499 points: a brain half in ink, a vault half in blue"></div>
+      <p class="plate-label"><i>SPECIMEN 001</i> HUMAN MEMORY, ARCHIVED LOCALLY</p>
+
+      <h1>
+        <span class="hl"><span class="hl-in">Claude forgets you</span></span>
+        <span class="hl"><span class="hl-in">after every conversation.</span></span>
+        <span class="hl"><span class="hl-in"><em>NeuroVault does not.</em></span></span>
+      </h1>
+
+      <p class="hero-sub">Say it once. Any MCP agent, Claude Code, Claude Desktop, Cursor, Codex, recalls it the moment it is relevant. 100% on your machine.</p>
+
+      <div class="hero-cta">
+        <a class="btn btn-solid" href="https://github.com/sirdath/NeuroVault/releases/latest">Download for Mac</a>
+        <a class="btn" href="https://github.com/sirdath/NeuroVault">Star on GitHub</a>
+      </div>
+      <p class="hero-badges">FREE &middot; MIT-LICENSED &middot; LOCAL-FIRST</p>
+
+      <div class="specs specs-l" aria-label="Specimen data, left column">
+        <p class="spec tick"><b>94% RECALL@5</b> LONGMEMEVAL, 470 QUESTIONS</p>
+        <p class="spec"><b>127.0.0.1:8765</b> LOOPBACK ONLY</p>
+        <p class="spec"><b>BGE-SMALL ONNX</b> 384-DIM, ON-DEVICE</p>
+        <p class="spec"><b>ZERO-LLM INGEST</b> EMBEDDINGS ONLY</p>
+      </div>
+      <div class="specs specs-r" aria-label="Specimen data, right column">
+        <p class="spec"><b>SQLITE-VEC + BM25 + GRAPH</b> FUSED VIA RRF</p>
+        <p class="spec tick"><b>54 MCP TOOLS</b> TIERED 3 / 8 / 20 / 54</p>
+        <p class="spec"><b>10,000 NOTES</b> = 130 MB MARKDOWN</p>
+        <p class="spec"><b>MIT LICENSE</b> OPEN SOURCE</p>
+      </div>
+    </div>
+
+    <p class="figcap" id="figcap">FIG. 0 &middot; THE MARK, 499 POINTS &middot; VAULT HALF IGNITES ON RESOLVE</p>
+    <p class="scrollcue" id="scrollcue" aria-hidden="true">SCROLL TO RESOLVE</p>
+  </section>
+</div>
+
+<!-- ============ 01 THE PROBLEM ============ -->
+<section class="ch-sec" id="problem" aria-labelledby="h-problem">
+  <div class="wrap">
+    <header class="ch-head" data-rise>
+      <span class="ch-num" aria-hidden="true">01</span>
+      <h2 id="h-problem">The Problem</h2>
+      <span class="ch-rule" aria-hidden="true"></span>
+      <span class="ch-tag">INDEX OF FAILURE MODES</span>
+    </header>
+
+    <p class="pull" data-rise><span class="q">&ldquo;</span>Your agent starts from zero, every single time.<span class="q">&rdquo;</span></p>
+
+    <div class="irows" data-rise>
+      <article class="irow">
+        <div class="prow-h">
+          <span class="irow-i">A.</span>
+          <div>
+            <h3 class="irow-t">Context bloat</h3>
+            <p class="prow-p">You cram everything into a 22,000-token CLAUDE.md that bloats every prompt and still goes stale. Memory as a text file does not scale past week two.</p>
+          </div>
+          <span class="irow-m">CLAUDE.MD, 22K TOKENS</span>
+        </div>
+      </article>
+      <article class="irow">
+        <div class="prow-h">
+          <span class="irow-i">B.</span>
+          <div>
+            <h3 class="irow-t">Session amnesia</h3>
+            <p class="prow-p">Past chats vanish the moment you close the window. The agent starts from zero every time, and you re-explain the same decisions again and again.</p>
+          </div>
+          <span class="irow-m">WINDOW CLOSED, MEMORY GONE</span>
+        </div>
+      </article>
+      <article class="irow">
+        <div class="prow-h">
+          <span class="irow-i">C.</span>
+          <div>
+            <h3 class="irow-t">Vendor custody</h3>
+            <p class="prow-p">Your &ldquo;memory&rdquo; lives in one vendor&rsquo;s cloud, in a format you can&rsquo;t read or move. If it isn&rsquo;t a folder of files on your disk, it isn&rsquo;t yours.</p>
+          </div>
+          <span class="irow-m">THEIR CLOUD, THEIR FORMAT</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 THE METHOD ============ -->
+<section class="ch-sec" id="method" aria-labelledby="h-method">
+  <div class="wrap">
+    <header class="ch-head" data-rise>
+      <span class="ch-num" aria-hidden="true">02</span>
+      <h2 id="h-method">The Method</h2>
+      <span class="ch-rule" aria-hidden="true"></span>
+      <span class="ch-tag">FIG. 1, RECALL PATH</span>
+    </header>
+
+    <div class="plate" data-rise>
+      <div class="plate-scroll" tabindex="0" role="group" aria-label="Figure 1, technical drawing of the recall pipeline. Markdown vault feeds on-device embeddings, then three parallel indexes, sqlite-vec, BM25 and an entity graph, fused with reciprocal rank fusion into recall.">
+        <svg id="figMethod" viewBox="0 0 1060 330" aria-hidden="true">
+          <text class="t0" x="14" y="26">FIG. 1</text>
+          <text class="tf" x="76" y="26">THE RECALL PATH</text>
+
+          <!-- 1 vault -->
+          <text class="tf" x="30" y="112">1.</text>
+          <rect class="bx draw" pathLength="1" x="30" y="120" width="160" height="84"/>
+          <text class="t1" x="110" y="156" text-anchor="middle">VAULT</text>
+          <text class="t2" x="110" y="176" text-anchor="middle">*.MD CANONICAL</text>
+
+          <line class="lnk draw" pathLength="1" x1="190" y1="162" x2="248" y2="162"/>
+          <path class="lnk draw" pathLength="1" d="M241,157 L249,162 L241,167"/>
+
+          <!-- 2 embeddings -->
+          <text class="tf" x="250" y="112">2.</text>
+          <rect class="bx draw" pathLength="1" x="250" y="120" width="190" height="84"/>
+          <text class="t1" x="345" y="150" text-anchor="middle">EMBEDDINGS</text>
+          <text class="t2" x="345" y="168" text-anchor="middle">BGE-SMALL ONNX, 384-D</text>
+          <text class="t2" x="345" y="184" text-anchor="middle">ZERO-LLM AT WRITE</text>
+
+          <!-- fan out -->
+          <line class="ln draw" pathLength="1" x1="440" y1="162" x2="520" y2="60"/>
+          <line class="ln draw" pathLength="1" x1="440" y1="162" x2="520" y2="162"/>
+          <line class="ln draw" pathLength="1" x1="440" y1="162" x2="520" y2="264"/>
+
+          <!-- 3 indexes -->
+          <text class="tf" x="520" y="24">3.</text>
+          <rect class="bx draw" pathLength="1" x="520" y="32" width="170" height="56"/>
+          <text class="t1" x="605" y="56" text-anchor="middle">SQLITE-VEC</text>
+          <text class="t2" x="605" y="74" text-anchor="middle">SEMANTIC</text>
+
+          <rect class="bx draw" pathLength="1" x="520" y="134" width="170" height="56"/>
+          <text class="t1" x="605" y="158" text-anchor="middle">BM25</text>
+          <text class="t2" x="605" y="176" text-anchor="middle">LEXICAL</text>
+
+          <rect class="bx draw" pathLength="1" x="520" y="236" width="170" height="56"/>
+          <text class="t1" x="605" y="260" text-anchor="middle">ENTITY GRAPH</text>
+          <text class="t2" x="605" y="278" text-anchor="middle">RELATIONAL</text>
+
+          <!-- converge -->
+          <line class="ln draw" pathLength="1" x1="690" y1="60" x2="768" y2="162"/>
+          <line class="ln draw" pathLength="1" x1="690" y1="162" x2="768" y2="162"/>
+          <line class="ln draw" pathLength="1" x1="690" y1="264" x2="768" y2="162"/>
+
+          <!-- 4 rrf -->
+          <text class="tf" x="768" y="126">4.</text>
+          <rect class="bx draw" pathLength="1" x="768" y="134" width="110" height="56"/>
+          <text class="t1" x="823" y="158" text-anchor="middle">RRF</text>
+          <text class="t2" x="823" y="176" text-anchor="middle">FUSION</text>
+
+          <line class="lnk draw" pathLength="1" x1="878" y1="162" x2="928" y2="162"/>
+          <path class="lnk draw" pathLength="1" d="M921,157 L929,162 L921,167"/>
+
+          <!-- 5 recall -->
+          <text class="tf" x="930" y="112">5.</text>
+          <rect class="bx draw" pathLength="1" x="930" y="120" width="118" height="84"/>
+          <text class="t1" x="989" y="150" text-anchor="middle">RECALL</text>
+          <text class="t2" x="989" y="168" text-anchor="middle">PASSAGES +</text>
+          <text class="t2" x="989" y="184" text-anchor="middle">CONFIDENCE 0-1</text>
+        </svg>
+      </div>
+      <p class="plate-cap">
+        <b>FIG. 1.</b> HYBRID RETRIEVAL, BENCHMARKED IN THE OPEN. SEMANTIC (SQLITE-VEC) + BM25 + KNOWLEDGE GRAPH, FUSED VIA RECIPROCAL RANK FUSION. RECALL RETURNS THE PASSAGES THAT MATTER, NOT THE WHOLE FILE. NO LLM EVER READS YOUR DATA AT WRITE TIME; PRIVACY IS STRUCTURAL. EVERY RECALLED FACT CARRIES A 0 TO 1 CONFIDENCE SIGNAL, DISTINCT FROM RELEVANCE, COMPUTED WITH ZERO LLM CALLS.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 THE PRINCIPLES ============ -->
+<section class="ch-sec" id="principles" aria-labelledby="h-principles">
+  <div class="wrap">
+    <header class="ch-head" data-rise>
+      <span class="ch-num" aria-hidden="true">03</span>
+      <h2 id="h-principles">The Principles</h2>
+      <span class="ch-rule" aria-hidden="true"></span>
+      <span class="ch-tag">CATALOG, SIX ENTRIES</span>
+    </header>
+
+    <div class="pgrid" data-rise>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">01</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="8.5"/><path d="M20.5 8.6 L23.2 6.6 M20.5 8.6 L21 5.3"/><circle class="b" cx="14" cy="14" r="1.8"/></svg>
+        </header>
+        <h3>Local-first, actually</h3>
+        <p>No cloud, no account, no telemetry. The backend binds to 127.0.0.1:8765, loopback only, and refuses outside connections.</p>
+        <span class="pc-m">127.0.0.1:8765 &middot; LOOPBACK ONLY</span>
+      </article>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">02</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><path d="M4.5 14 C8.5 8.8, 19.5 8.8, 23.5 14 C19.5 19.2, 8.5 19.2, 4.5 14 Z"/><circle cx="14" cy="14" r="2.8"/><line class="b" x1="6" y1="22.5" x2="22" y2="5.5"/></svg>
+        </header>
+        <h3>Zero-LLM on-device ingest</h3>
+        <p>Embeddings only, BGE-small ONNX. No LLM ever reads your data at write time. Privacy is structural, not a policy promise.</p>
+        <span class="pc-m">EMBEDDINGS ONLY AT WRITE</span>
+      </article>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">03</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><path d="M7 3.5 H17.5 L21.5 7.5 V24.5 H7 Z"/><path d="M17.5 3.5 V7.5 H21.5"/><path d="M10.5 19 V12.5 L13 15 L15.5 12.5 V19"/><path class="b" d="M18.5 15.5 V19 M18.5 19 l-1.6-1.6 M18.5 19 l1.6-1.6"/></svg>
+        </header>
+        <h3>Markdown is canonical</h3>
+        <p>The vault is a folder of .md files, and 10,000 notes are about 130 MB. The database is a rebuildable index. Obsidian-compatible, readable forever.</p>
+        <span class="pc-m">10,000 NOTES = 130 MB</span>
+      </article>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">04</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><path d="M4 7 H10 M4 14 H10 M4 21 H10"/><path d="M10 7 L16.2 13.2 M10 14 H16 M10 21 L16.2 14.8"/><circle class="b" cx="18" cy="14" r="2.3"/><path class="b" d="M20.3 14 H24.5"/></svg>
+        </header>
+        <h3>Hybrid retrieval, in the open</h3>
+        <p>Semantic (sqlite-vec) + BM25 + knowledge graph, fused via reciprocal rank fusion. Recall returns the passages that matter, not the whole file, and the benchmarks are published.</p>
+        <span class="pc-m">VEC + BM25 + GRAPH &middot; RRF</span>
+      </article>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">05</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><circle cx="7" cy="7" r="2"/><circle cx="21" cy="7" r="2"/><circle cx="7" cy="21" r="2"/><circle cx="21" cy="21" r="2"/><circle class="b" cx="14" cy="14" r="2.3"/><path d="M8.5 8.5 L12.2 12.2 M19.5 8.5 L15.8 12.2 M8.5 19.5 L12.2 15.8 M19.5 19.5 L15.8 15.8"/></svg>
+        </header>
+        <h3>Graphify: code-aware memory</h3>
+        <p>Tree-sitter parses your repo on-device into a living graph of every symbol, import and call: where_defined, who_calls, blast_radius. 1,887 files in 8.4 seconds, 100% on-device.</p>
+        <span class="pc-m">1,887 FILES IN 8.4S</span>
+      </article>
+      <article class="pcard">
+        <header>
+          <span class="pc-i">06</span>
+          <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><path d="M11 6.5 H17"/><path d="M8.5 11.5 H19.5"/><path d="M6 16.5 H22"/><path class="b" d="M4 21.5 H24"/></svg>
+        </header>
+        <h3>54 MCP tools, tiered</h3>
+        <p>minimal(3), lite(8, the default), standard(20), full(54). An agent loads only the slice it needs, so the tool surface stays small and the context stays clean.</p>
+        <span class="pc-m">TIERED 3 / 8 / 20 / 54</span>
+      </article>
+    </div>
+
+    <figure class="exhibit" data-rise>
+      <div class="frame">
+        <img src="../assets/neural-graph.png" alt="Screenshot of the NeuroVault desktop app showing the neural graph view, a dark canvas of linked memory nodes." loading="lazy" width="1600" height="1000">
+      </div>
+      <figcaption>EXHIBIT B &middot; THE NEURAL GRAPH VIEW, CAPTURED FROM THE APP &middot; TAURI 2.0, REACT, RUST</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 04 THE EVIDENCE ============ -->
+<section class="ch-sec" id="evidence" aria-labelledby="h-evidence">
+  <div class="wrap">
+    <header class="ch-head" data-rise>
+      <span class="ch-num" aria-hidden="true">04</span>
+      <h2 id="h-evidence">The Evidence</h2>
+      <span class="ch-rule" aria-hidden="true"></span>
+      <span class="ch-tag">LONGMEMEVAL, FULL SET</span>
+    </header>
+
+    <div class="plate" data-rise>
+      <div class="evid">
+        <div>
+          <p class="bignum"><span id="big94">94</span><sup>%</sup></p>
+          <p class="bignum-l">RECALL@5 &middot; LONGMEMEVAL &middot; NEUROVAULT&rsquo;S REAL RECALL PATH</p>
+        </div>
+        <div>
+          <p class="honest">This is retrieval recall, not an end-to-end QA leaderboard number. We publish it anyway.</p>
+          <p class="plain">In plain terms: ask it for a memory, and the right one is in the top five results 94 times out of 100, measured on 470 questions over long multi-session chat histories.</p>
+          <table class="stbl">
+            <caption>SPECIMEN TABLE, MEASURED VALUES</caption>
+            <tbody>
+              <tr><th scope="row">RECALL@5</th><td>FULL 470-QUESTION SET</td><td class="em">0.94</td></tr>
+              <tr><th scope="row">HIT@10</th><td>SAME RUN</td><td class="em">0.98</td></tr>
+              <tr><th scope="row">HAYSTACK</th><td>MEDIAN QUERY</td><td class="em">120K TOKENS</td></tr>
+              <tr><th scope="row">EMBEDDINGS</th><td>BGE-SMALL ONNX</td><td class="em">100% ON-DEVICE</td></tr>
+            </tbody>
+          </table>
+          <a class="bench-link" href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md">READ THE FULL BENCHMARK NOTES</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 COORDINATION ============ -->
+<section class="ch-sec" id="coordination" aria-labelledby="h-coord">
+  <div class="wrap">
+    <header class="ch-head" data-rise>
+      <span class="ch-num" aria-hidden="true">05</span>
+      <h2 id="h-coord">Coordination</h2>
+      <span class="ch-rule" aria-hidden="true"></span>
+      <span class="ch-tag">FIG. 2, HANDOFF + INBOX</span>
+    </header>
+
+    <div class="plate" data-rise>
+      <div class="plate-scroll" tabindex="0" role="group" aria-label="Figure 2, diagram of multi-agent coordination. Agent A routes a handoff through one shared local brain; Agent B reads it from its own inbox.">
+        <svg id="figCoord" viewBox="0 0 1000 300" aria-hidden="true">
+          <text class="t0" x="14" y="26">FIG. 2</text>
+          <text class="tf" x="76" y="26">ONE SHARED BRAIN, TWO AGENTS</text>
+
+          <rect class="bx draw" pathLength="1" x="60" y="120" width="180" height="90"/>
+          <text class="t1" x="150" y="160" text-anchor="middle">AGENT A</text>
+          <text class="t2" x="150" y="180" text-anchor="middle">CLAUDE CODE</text>
+
+          <rect class="bx draw" pathLength="1" x="410" y="105" width="180" height="120"/>
+          <rect class="ln draw" pathLength="1" x="421" y="116" width="158" height="98"/>
+          <text class="t1" x="500" y="152" text-anchor="middle">SHARED BRAIN</text>
+          <text class="t2" x="500" y="172" text-anchor="middle">BRAIN.DB + VAULT</text>
+          <text class="t2" x="500" y="190" text-anchor="middle">100% LOCAL</text>
+
+          <rect class="bx draw" pathLength="1" x="760" y="120" width="180" height="90"/>
+          <text class="t1" x="850" y="152" text-anchor="middle">AGENT B</text>
+          <text class="t2" x="850" y="170" text-anchor="middle">CURSOR</text>
+          <rect class="ln draw" pathLength="1" x="788" y="182" width="124" height="16"/>
+          <text class="tf" x="850" y="194" text-anchor="middle">INBOX</text>
+
+          <line class="lnk draw" pathLength="1" x1="240" y1="165" x2="410" y2="165"/>
+          <text class="t2" x="325" y="152" text-anchor="middle">handoff(to=B)</text>
+          <line class="lnk draw" pathLength="1" x1="590" y1="165" x2="760" y2="165"/>
+          <text class="t2" x="675" y="152" text-anchor="middle">agent_inbox()</text>
+
+          <circle id="pkt" cx="500" cy="165" r="5" fill="#2F7BF6"/>
+
+          <text class="tf" x="150" y="240" text-anchor="middle">session_start(agent=A)</text>
+          <text class="tf" x="850" y="240" text-anchor="middle">session_start(agent=B)</text>
+        </svg>
+      </div>
+      <p class="plate-cap">
+        <b>FIG. 2.</b> AGENTS ROUTE WORK TO EACH OTHER AND READ THEIR OWN INBOX THROUGH ONE SHARED LOCAL BRAIN. HANDOFFS ARE PULL-BASED AND INERT; NOTHING AUTO-RUNS. SESSION_START(AGENT=X) SCOPES EACH AGENT&rsquo;S VIEW TO ITS OWN RECENT MEMORY AND INBOX. A COORDINATION SUBSTRATE, NOT AN ORCHESTRATOR.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 ACQUIRE ============ -->
+<section class="acquire" id="acquire" aria-labelledby="h-acquire">
+  <div class="wrap">
+    <header class="ch-head" style="border-top-color:rgba(238,240,244,.3)" data-rise>
+      <span class="ch-num" style="color:rgba(238,240,244,.25)" aria-hidden="true">06</span>
+      <h2 id="h-acquire" style="color:rgba(238,240,244,.9)">Acquire</h2>
+      <span class="ch-rule" style="background:rgba(238,240,244,.16)" aria-hidden="true"></span>
+      <span class="ch-tag" style="color:rgba(238,240,244,.5)">DEACCESSIONED TO YOU</span>
+    </header>
+    <div class="ascii-ex" data-rise aria-hidden="true">
+      <img src="../assets/ascii-brain-blue.gif" alt="" loading="lazy">
+    </div>
+    <p class="acq-fig" data-rise aria-hidden="true">EXHIBIT C &middot; THE BRAIN, RENDERED IN CHARACTERS</p>
+    <p class="acq-title" data-rise>Take your memory with you.</p>
+    <p data-rise>Give your AI a memory that survives the window close. Free, MIT-licensed, local-first. One download, no account, nothing leaves your machine.</p>
+    <div class="acq-cta" data-rise>
+      <a class="btn btn-blue" href="https://github.com/sirdath/NeuroVault/releases/latest">Download for Mac</a>
+      <a class="btn btn-ghost" href="https://github.com/sirdath/NeuroVault">Star on GitHub</a>
+    </div>
+    <p class="acq-note" data-rise>FREE &middot; MIT-LICENSED &middot; LOCAL-FIRST</p>
+  </div>
+</section>
+
+</main>
+
+<footer aria-label="Colophon">
+  <div class="wrap">
+    <div class="colophon">
+      <span>&copy; 2026 NEUROVAULT CONTRIBUTORS</span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/sirdath/NeuroVault/blob/main/README.md">DOCS</a>
+        <a href="https://github.com/sirdath/NeuroVault/blob/main/PRIVACY.md">PRIVACY</a>
+        <a href="https://github.com/sirdath/NeuroVault/blob/main/LICENSE">MIT LICENSE</a>
+        <a href="https://github.com/sirdath/NeuroVault/blob/main/docs/benchmarks/README.md">BENCHMARKS</a>
+      </nav>
+      <span class="set">SET IN FRAUNCES AND IBM PLEX MONO. ANIMATED WITH GSAP. 100% LOCAL.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../fx/nv-brain-points.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+"use strict";
+var PRM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var hasGSAP = (typeof gsap !== "undefined") && (typeof ScrollTrigger !== "undefined");
+document.documentElement.classList.add("js");
+if (PRM) document.documentElement.classList.add("prm");
+if (hasGSAP) gsap.registerPlugin(ScrollTrigger);
+
+/* ---------- scroll progress plate number ---------- */
+var pgv = document.getElementById("pgv");
+function updProgress(){
+  var d = document.documentElement;
+  var max = d.scrollHeight - window.innerHeight;
+  var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+  pgv.textContent = String(Math.round(p * 100)).padStart(3, "0");
+}
+window.addEventListener("scroll", updProgress, { passive:true });
+window.addEventListener("resize", updProgress);
+updProgress();
+
+/* ---------- the stamp: the mark drawn from its own 499 points ---------- */
+(function(){
+  var host = document.getElementById("stamp");
+  var pts = window.NV_BRAIN_POINTS;
+  if (!host || !pts || !pts.length) return;
+  var out = ['<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'];
+  for (var i = 0; i < pts.length; i++){
+    var p = pts[i];
+    out.push('<circle cx="' + (p.x * 100).toFixed(1) + '" cy="' + (p.y * 100).toFixed(1) +
+      '" r="0.75" fill="' + (p.t === "vault" ? "rgba(47,123,246,.9)" : "rgba(11,14,20,.78)") + '"/>');
+  }
+  out.push("</svg>");
+  host.innerHTML = out.join("");
+})();
+
+/* ---------- the data sculpture ---------- */
+var morphV = 0, igniteV = 0;
+(function(){
+  var cv = document.getElementById("sculpture");
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var small = window.matchMedia("(max-width: 720px)").matches;
+  var ROWS = small ? 46 : 88;
+  var NP   = small ? 320 : 700;
+  var STEP = small ? 18 : 13;
+  var W = 0, H = 0;
+
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(499);
+
+  /* per-row ink alpha, fixed seed */
+  var rowA = [];
+  for (var r = 0; r < ROWS; r++) rowA.push(0.055 + rnd() * 0.105);
+
+  /* layered sine field, normalized x, row index, ms time */
+  function fieldN(u, rf, t){
+    var env = Math.sin(Math.PI * Math.min(1, Math.max(0, rf / (ROWS - 1))));
+    return env * (
+        Math.sin(u * 6.2  + rf * 0.21  + t * 0.00016)
+      + 0.62 * Math.sin(u * 14.7 - rf * 0.11  + t * 0.00009 + 1.7)
+      + 0.35 * Math.sin(u * 29.0 + rf * 0.043 + t * 0.00024 + 4.2)
+    );
+  }
+
+  /* particles, density follows the crests (rejection sampling, fixed seed) */
+  var parts = [];
+  var guard = 0;
+  while (parts.length < NP && guard++ < NP * 60){
+    var u = rnd(), rv = rnd() * (ROWS - 1);
+    var f = fieldN(u, rv, 0);
+    var accept = 0.14 + 0.86 * Math.max(0, f / 1.97);
+    if (rnd() < accept){
+      parts.push({ u:u, rv:rv, j:(rnd() - 0.5) * 10, dr:(rnd() * 0.5 + 0.2) * 0.0000045, bl:(rnd() < 0.09), lp:null });
+    }
+  }
+  /* assign logo points */
+  var LOGO = window.NV_BRAIN_POINTS || null;
+  if (LOGO && LOGO.length){
+    for (var i = 0; i < parts.length; i++) parts[i].lp = LOGO[i % LOGO.length];
+  }
+
+  /* pre-rendered blue glow sprite (never shadowBlur in the loop) */
+  var glow = document.createElement("canvas");
+  glow.width = glow.height = 48;
+  (function(){
+    var g = glow.getContext("2d");
+    var rg = g.createRadialGradient(24, 24, 0, 24, 24, 24);
+    rg.addColorStop(0, "rgba(47,123,246,0.85)");
+    rg.addColorStop(0.35, "rgba(47,123,246,0.30)");
+    rg.addColorStop(1, "rgba(47,123,246,0)");
+    g.fillStyle = rg;
+    g.fillRect(0, 0, 48, 48);
+  })();
+
+  function resize(){
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (PRM) draw(0);
+  }
+
+  function easeIO(x){ return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2; }
+
+  function draw(t){
+    ctx.clearRect(0, 0, W, H);
+    var m = easeIO(Math.min(1, Math.max(0, morphV)));
+    var mm = 1 - m;
+    var amp = H * 0.105;
+
+    /* the woven mesh; electric blue threads run through the silver fabric.
+       during the morph the row density halves: cheaper frames, masked by motion */
+    if (m < 0.97){
+      ctx.lineWidth = 1;
+      var rStep = (m > 0.04 && m < 0.95) ? 2 : 1;
+      for (var r = 0; r < ROWS; r += rStep){
+        ctx.strokeStyle = (r % 11 === 3)
+          ? "rgba(47,123,246," + (Math.min(0.30, rowA[r] * 2.1) * mm).toFixed(3) + ")"
+          : "rgba(11,14,20," + (rowA[r] * mm).toFixed(3) + ")";
+        ctx.beginPath();
+        var yb = H * (0.18 + 0.64 * r / (ROWS - 1));
+        var first = true;
+        for (var x = -8; x <= W + 8; x += STEP){
+          var y = yb + fieldN(x / W, r, t) * amp;
+          if (first){ ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    /* ink particles */
+    var side = Math.min(W, H) * 0.62;
+    var cx = W / 2, cy = H / 2;
+    var ig = igniteV;
+    for (var k = 0; k < parts.length; k++){
+      var p = parts[k];
+      var u = (p.u + t * p.dr) % 1;
+      var f = fieldN(u, p.rv, t);
+      var fx = u * W;
+      var fy = H * (0.18 + 0.64 * p.rv / (ROWS - 1)) + f * amp + p.j;
+      var px = fx, py = fy;
+      var a = 0.14 + 0.34 * Math.max(0, f / 1.97);
+      if (m > 0 && p.lp){
+        var lx = cx + (p.lp.x - 0.5) * side + p.j * 0.25;
+        var ly = cy + (p.lp.y - 0.5) * side + p.j * 0.25;
+        px = fx + (lx - fx) * m;
+        py = fy + (ly - fy) * m;
+        a = a * mm + 0.58 * m;
+      }
+      var isVault = ig > 0.01 && m > 0.5 && p.lp && p.lp.t === "vault";
+      if (isVault){
+        ctx.globalAlpha = ig * m * 0.85;
+        ctx.drawImage(glow, px - 10, py - 10, 20, 20);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(47,123,246," + (a * (1 - ig) + ig).toFixed(3) + ")";
+      } else if (p.bl){
+        ctx.fillStyle = "rgba(47,123,246," + Math.min(0.62, a * 1.5).toFixed(3) + ")";
+      } else {
+        ctx.fillStyle = "rgba(11,14,20," + a.toFixed(3) + ")";
+      }
+      ctx.fillRect(px - 0.8, py - 0.8, 1.6, 1.6);
+    }
+  }
+
+  /* one rAF loop, paused offscreen and on hidden tab */
+  var raf = null, onScreen = true;
+  function loop(ts){
+    raf = null;
+    draw(ts);
+    if (onScreen && !document.hidden && !PRM) raf = requestAnimationFrame(loop);
+  }
+  function kick(){
+    if (!raf && onScreen && !document.hidden && !PRM) raf = requestAnimationFrame(loop);
+  }
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      onScreen = entries[0].isIntersecting;
+      if (onScreen) kick();
+    }, { threshold: 0 });
+    io.observe(document.getElementById("heroWrap"));
+  }
+  document.addEventListener("visibilitychange", kick);
+  window.addEventListener("resize", resize);
+  resize();
+  if (PRM) draw(0); else kick();
+})();
+
+/* ---------- the scroll moment: mesh resolves into the 499-point mark ---------- */
+var heroUi = document.getElementById("heroUi");
+var figcap = document.getElementById("figcap");
+var scrollcue = document.getElementById("scrollcue");
+function ss(a, b, x){
+  x = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return x * x * (3 - 2 * x);
+}
+if (hasGSAP && !PRM){
+  /* scrub is smoothed (0.75s catch-up) so wheel steps glide instead of jump.
+     the mark resolves once and HOLDS; no reversal on the way out. DOM writes
+     are throttled to visible deltas, and only the canvas fades at the exit. */
+  var sc = document.getElementById("sculpture");
+  var lastFade = -1, lastCap = -1, lastCue = -1, lastCv = -1;
+  ScrollTrigger.create({
+    trigger: "#heroWrap",
+    start: "top top",
+    end: "bottom bottom",
+    scrub: 0.75,
+    onUpdate: function(self){
+      var p = self.progress;
+      morphV  = ss(0.10, 0.48, p);
+      igniteV = ss(0.48, 0.60, p) * (1 - ss(0.84, 0.97, p));
+      var fade = 1 - ss(0.05, 0.26, p);
+      if (Math.abs(fade - lastFade) > 0.008 || (fade === 0) !== (lastFade === 0)){
+        lastFade = fade;
+        heroUi.style.opacity = fade;
+        heroUi.style.visibility = fade < 0.02 ? "hidden" : "visible";
+      }
+      var cap = ss(0.42, 0.55, p) * (1 - ss(0.86, 0.98, p));
+      if (Math.abs(cap - lastCap) > 0.01){ lastCap = cap; figcap.style.opacity = cap; }
+      if (scrollcue){
+        var cue = 1 - ss(0.01, 0.08, p);
+        if (Math.abs(cue - lastCue) > 0.02){ lastCue = cue; scrollcue.style.opacity = cue; }
+      }
+      var cvo = 1 - ss(0.90, 1, p);
+      if (Math.abs(cvo - lastCv) > 0.01){ lastCv = cvo; sc.style.opacity = cvo; }
+    }
+  });
+}
+
+/* ---------- entrances (gsap.from only: nothing hidden if JS fails) ---------- */
+if (hasGSAP && !PRM){
+  gsap.from(".hl-in", {
+    yPercent: 110, duration: 1.05, ease: "expo.out",
+    stagger: 0.09, delay: 0.15
+  });
+  gsap.from([".plate-label", ".hero-sub", ".hero-cta", ".hero-badges"], {
+    autoAlpha: 0, y: 18, duration: 0.9, ease: "expo.out",
+    stagger: 0.07, delay: 0.5
+  });
+  gsap.from(".spec", {
+    autoAlpha: 0, x: function(i, el){ return el.closest(".specs-r") ? 14 : -14; },
+    duration: 0.8, ease: "expo.out", stagger: 0.06, delay: 0.9
+  });
+
+  gsap.utils.toArray("[data-rise]").forEach(function(el){
+    gsap.from(el, {
+      y: 30, autoAlpha: 0, duration: 0.95, ease: "expo.out",
+      scrollTrigger: { trigger: el, start: "top 87%", once: true }
+    });
+  });
+
+  /* patent plates draw on scroll */
+  gsap.utils.toArray("#figMethod, #figCoord").forEach(function(svg){
+    var els = svg.querySelectorAll(".draw");
+    els.forEach(function(e){ e.style.strokeDasharray = "1"; });
+    gsap.fromTo(els,
+      { strokeDashoffset: 1 },
+      { strokeDashoffset: 0, stagger: 0.05, ease: "none",
+        scrollTrigger: { trigger: svg, start: "top 85%", end: "top 30%", scrub: 1 } });
+    gsap.from(svg.querySelectorAll("text"), {
+      autoAlpha: 0, duration: 0.5, ease: "power2.out", stagger: 0.02,
+      scrollTrigger: { trigger: svg, start: "top 60%", once: true }
+    });
+  });
+
+  /* 94 counts up */
+  var big = document.getElementById("big94");
+  if (big){
+    var proxy = { v: 0 };
+    ScrollTrigger.create({
+      trigger: "#evidence .plate", start: "top 80%", once: true,
+      onEnter: function(){
+        gsap.to(proxy, {
+          v: 94, duration: 1.7, ease: "power3.out",
+          onUpdate: function(){ big.textContent = String(Math.round(proxy.v)); }
+        });
+      }
+    });
+    big.textContent = "0";
+  }
+
+  /* the packet: A -> brain -> B inbox */
+  var pkt = document.getElementById("pkt");
+  if (pkt){
+    var tl = gsap.timeline({ repeat: -1, repeatDelay: 1.6, paused: true });
+    tl.set(pkt, { attr: { cx: 240, cy: 165 }, autoAlpha: 1 })
+      .to(pkt, { attr: { cx: 410 }, duration: 1.1, ease: "power1.inOut" })
+      .to(pkt, { autoAlpha: 0.25, duration: 0.35, ease: "power1.in" })
+      .set(pkt, { attr: { cx: 590 } })
+      .to(pkt, { autoAlpha: 1, duration: 0.25 })
+      .to(pkt, { attr: { cx: 848, cy: 188 }, duration: 1.1, ease: "power1.inOut" })
+      .to(pkt, { autoAlpha: 0, duration: 0.5, ease: "power1.out" }, "+=0.35");
+    ScrollTrigger.create({
+      trigger: "#figCoord", start: "top 90%", end: "bottom 10%",
+      onToggle: function(self){ self.isActive ? tl.play() : tl.pause(); }
+    });
+  }
+
+  document.fonts && document.fonts.ready.then(function(){ ScrollTrigger.refresh(); });
+}
+})();
+</script>
+</body>
+</html>
