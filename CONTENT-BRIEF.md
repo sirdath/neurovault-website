@@ -29,8 +29,8 @@
 8. **NEW — confidence on recall.** Every recalled fact carries a 0–1 trust signal (distinct from relevance), so an agent knows what to rely on — especially facts written by other agents. Zero-LLM (structural).
 
 ## Proof / benchmark (receipt-honest)
-- **97% recall@5 on LongMemEval** — one of the hardest memory benchmarks (long multi-session histories, updated/contradicted facts, temporal reasoning). Full 470-question set, NeuroVault's real `recall()` path, 100% on-device embeddings.
-- hit@5 ≈ 0.97 (right memory in top 5), hit@10 ≈ 0.99, median query over a 120k-token haystack, zero cloud / no API keys.
+- **97.45% recall@5 on LongMemEval** — one of the hardest memory benchmarks (long multi-session histories, updated/contradicted facts, temporal reasoning). Full 470-question set, NeuroVault's real `recall()` path, 100% on-device embeddings.
+- hit@5 ≈ 0.9745 (right memory in top 5), hit@10 ≈ 0.99, median query over a 120k-token haystack, zero cloud / no API keys.
 - Honest framing: this is **retrieval recall**, not an end-to-end QA-leaderboard number. Reproducible harness.
 
 ## Uses ("one brain, countless uses")
