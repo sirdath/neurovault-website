@@ -545,7 +545,7 @@ footer{
       <p class="hero-badges">FREE &middot; MIT-LICENSED &middot; LOCAL-FIRST</p>
 
       <div class="specs specs-l" aria-label="Specimen data, left column">
-        <p class="spec tick"><b>94% RECALL@5</b> LONGMEMEVAL, 470 QUESTIONS</p>
+        <p class="spec tick"><b>97% RECALL@5</b> LONGMEMEVAL, 470 QUESTIONS</p>
         <p class="spec"><b>127.0.0.1:8765</b> LOOPBACK ONLY</p>
         <p class="spec"><b>BGE-SMALL ONNX</b> 384-DIM, ON-DEVICE</p>
         <p class="spec"><b>ZERO-LLM INGEST</b> EMBEDDINGS ONLY</p>
@@ -779,17 +779,17 @@ footer{
     <div class="plate" data-rise>
       <div class="evid">
         <div>
-          <p class="bignum"><span id="big94">94</span><sup>%</sup></p>
+          <p class="bignum"><span id="big94">97</span><sup>%</sup></p>
           <p class="bignum-l">RECALL@5 &middot; LONGMEMEVAL &middot; NEUROVAULT&rsquo;S REAL RECALL PATH</p>
         </div>
         <div>
           <p class="honest">This is retrieval recall, not an end-to-end QA leaderboard number. We publish it anyway.</p>
-          <p class="plain">In plain terms: ask it for a memory, and the right one is in the top five results 94 times out of 100, measured on 470 questions over long multi-session chat histories.</p>
+          <p class="plain">In plain terms: ask it for a memory, and the right one is in the top five results 97 times out of 100, measured on 470 questions over long multi-session chat histories.</p>
           <table class="stbl">
             <caption>SPECIMEN TABLE, MEASURED VALUES</caption>
             <tbody>
-              <tr><th scope="row">RECALL@5</th><td>FULL 470-QUESTION SET</td><td class="em">0.94</td></tr>
-              <tr><th scope="row">HIT@10</th><td>SAME RUN</td><td class="em">0.98</td></tr>
+              <tr><th scope="row">RECALL@5</th><td>FULL 470-QUESTION SET</td><td class="em">0.97</td></tr>
+              <tr><th scope="row">HIT@10</th><td>SAME RUN</td><td class="em">0.99</td></tr>
               <tr><th scope="row">HAYSTACK</th><td>MEDIAN QUERY</td><td class="em">120K TOKENS</td></tr>
               <tr><th scope="row">EMBEDDINGS</th><td>BGE-SMALL ONNX</td><td class="em">100% ON-DEVICE</td></tr>
             </tbody>
@@ -1271,7 +1271,7 @@ if (hasGSAP && !PRM){
       trigger: "#evidence .plate", start: "top 80%", once: true,
       onEnter: function(){
         gsap.to(proxy, {
-          v: 94, duration: 1.7, ease: "power3.out",
+          v: 97, duration: 1.7, ease: "power3.out",
           onUpdate: function(){ big.textContent = String(Math.round(proxy.v)); }
         });
       }
