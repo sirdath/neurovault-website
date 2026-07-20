@@ -545,7 +545,7 @@ footer{
       <p class="hero-badges">FREE &middot; MIT-LICENSED &middot; LOCAL-FIRST</p>
 
       <div class="specs specs-l" aria-label="Specimen data, left column">
-        <p class="spec tick"><b>97.45% RECALL@5</b> LONGMEMEVAL, 470 QUESTIONS</p>
+        <p class="spec tick"><b>97.45% HIT@5</b> LONGMEMEVAL, 470 QUESTIONS</p>
         <p class="spec"><b>127.0.0.1:8765</b> LOOPBACK ONLY</p>
         <p class="spec"><b>BGE-SMALL ONNX</b> 384-DIM, ON-DEVICE</p>
         <p class="spec"><b>ZERO-LLM INGEST</b> EMBEDDINGS ONLY</p>
@@ -752,7 +752,7 @@ footer{
           <svg class="pc-g" viewBox="0 0 28 28" aria-hidden="true"><path d="M11 6.5 H17"/><path d="M8.5 11.5 H19.5"/><path d="M6 16.5 H22"/><path class="b" d="M4 21.5 H24"/></svg>
         </header>
         <h3>54 MCP tools, tiered</h3>
-        <p>minimal(3), lite(8, the default), standard(20), full(54). An agent loads only the slice it needs, so the tool surface stays small and the context stays clean.</p>
+        <p>minimal(3), lite(8, the default), standard(21), full(55). An agent loads only the slice it needs, so the tool surface stays small and the context stays clean.</p>
         <span class="pc-m">TIERED 3 / 8 / 20 / 54</span>
       </article>
     </div>
@@ -780,7 +780,7 @@ footer{
       <div class="evid">
         <div>
           <p class="bignum"><span id="big94">97.45</span><sup>%</sup></p>
-          <p class="bignum-l">RECALL@5 &middot; LONGMEMEVAL &middot; NEUROVAULT&rsquo;S REAL RECALL PATH</p>
+          <p class="bignum-l">HIT@5 &middot; LONGMEMEVAL &middot; NEUROVAULT&rsquo;S REAL RECALL PATH</p>
         </div>
         <div>
           <p class="honest">This is retrieval recall, not an end-to-end QA leaderboard number. We publish it anyway.</p>
@@ -788,7 +788,8 @@ footer{
           <table class="stbl">
             <caption>SPECIMEN TABLE, MEASURED VALUES</caption>
             <tbody>
-              <tr><th scope="row">RECALL@5</th><td>FULL 470-QUESTION SET</td><td class="em">0.9745</td></tr>
+              <tr><th scope="row">HIT@5</th><td>FULL 470-QUESTION SET</td><td class="em">0.9745</td></tr>
+              <tr><th scope="row">RECALL@5</th><td>STRICTER: ALL GOLD SESSIONS</td><td class="em">0.9383</td></tr>
               <tr><th scope="row">HIT@10</th><td>SAME RUN</td><td class="em">0.99</td></tr>
               <tr><th scope="row">HAYSTACK</th><td>MEDIAN QUERY</td><td class="em">120K TOKENS</td></tr>
               <tr><th scope="row">EMBEDDINGS</th><td>BGE-SMALL ONNX</td><td class="em">100% ON-DEVICE</td></tr>
@@ -867,7 +868,7 @@ footer{
     <p class="acq-title" data-rise>Take your memory with you.</p>
     <p data-rise>Give your AI a memory that survives the window close. Free, MIT-licensed, local-first. One download, no account, nothing leaves your machine.</p>
 
-    <div class="term-plate" data-rise role="img" aria-label="Terminal transcript: npm i -g neurovault installs the engine and native MCP server; claude mcp add neurovault connects 54 tools; an agent saves a memory with remember and recalls it in a brand-new session.">
+    <div class="term-plate" data-rise role="img" aria-label="Terminal transcript: npm i -g neurovault installs the engine and native MCP server; claude mcp add neurovault connects 55 tools; an agent saves a memory with remember and recalls it in a brand-new session.">
       <div class="term-head" aria-hidden="true">
         <span class="term-dot" style="background:#ff5f57"></span>
         <span class="term-dot" style="background:#febc2e"></span>
@@ -960,7 +961,7 @@ updProgress();
     {t:"ok",  pre:"",         text:"[ok] installed - engine + native MCP server"},
     {t:"gap"},
     {t:"cmd", pre:"$ ",       text:"claude mcp add neurovault"},
-    {t:"ok",  pre:"",         text:"[ok] connected - 54 tools - brain @ 127.0.0.1:8765"},
+    {t:"ok",  pre:"",         text:"[ok] connected - 55 tools - brain @ 127.0.0.1:8765"},
     {t:"gap"},
     {t:"cmd", pre:"agent > ", text:"remember(\"Dath ships on Fridays, never Mondays\")"},
     {t:"ok",  pre:"",         text:"[ok] saved engram - local - written to vault/*.md"},

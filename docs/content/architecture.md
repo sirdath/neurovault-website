@@ -36,7 +36,7 @@
 - Idle RAM: **~35 MB** (was 500 MB – 3 GB with the Python sidecar).
 - Cold start: **<500 ms** to interactive.
 - Recall latency: **20-50 ms** median for the default pipeline, **~680 ms** when the optional cross-encoder reranker is enabled.
-- Quality (internal eval set, 30 queries): **86.67% hit@1 / MRR 0.867** default, **93.33% hit@1 / MRR 0.933** with reranker.
+- Quality: **97.45% hit@5** on LongMemEval (470 questions; stricter recall@5 is 93.83%). On a small 30-query internal set from 2026-04, **83.33% hit@1 / MRR 0.861** engine-only.
 
 ---
 
@@ -309,7 +309,7 @@ On session start, Claude Code spawns the server. It calls `/api/health` to check
 
 ### The tool surface (the agent's contract)
 
-The server exposes **54 tools** via a data-driven registry, gated by a **tier** so an agent only loads the slice it needs: `minimal` (3) · `lite` (8, the default) · `standard` (20) · `full` (54). Set it with `NEUROVAULT_MCP_TIER`, `~/.neurovault/mcp_tier.txt`, or Settings → MCP — fewer tools means less tool-definition context the agent pays for up front. Every tool takes an optional `brain` parameter. A representative slice:
+The server exposes **55 tools** via a data-driven registry, gated by a **tier** so an agent only loads the slice it needs: `minimal` (3) · `lite` (8, the default) · `standard` (21) · `full` (55). Set it with `NEUROVAULT_MCP_TIER`, `~/.neurovault/mcp_tier.txt`, or Settings → MCP — fewer tools means less tool-definition context the agent pays for up front. Every tool takes an optional `brain` parameter. A representative slice:
 
 **Read-only (auto-approvable):**
 - `recall(query, mode, limit, brain, include_observations, rerank, spread_hops, as_of)` — hybrid search. Primary tool. Supports search operators inside `query`: `kind:`, `folder:`, `after:`, `before:`, `entity:`, `state:`, `agent:`.
