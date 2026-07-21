@@ -1,8 +1,7 @@
 name: Deploy site to GitHub Pages
 
-# Deploys the whole repo (static site at the root) to GitHub Pages on
-# every push to main. This repo IS the website — landing page at /, docs
-# under /docs.
+# Deploys an explicit public allowlist. Prototype and legacy pages remain in
+# git for design history but cannot become reachable through GitHub Pages.
 
 on:
   push:
@@ -27,13 +26,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare public site artifact
+        run: |
+          mkdir -p _site/assets _site/fx _site/docs/content _site/docs/lib
+          cp index.html script.js styles.css CNAME _site/
+          cp assets/favicon.svg assets/favicon.png _site/assets/
+          cp assets/mark-dark.png assets/wordmark-dark.png _site/assets/
+          cp assets/neural-graph.png assets/ascii-brain-blue.gif _site/assets/
+          cp fx/nv-brain-points.js _site/fx/
+          cp docs/index.html docs/docs.js docs/docs.css _site/docs/
+          cp -R docs/lib/. _site/docs/lib/
+          cp docs/content/overview.md _site/docs/content/
+          cp docs/content/quickstart.md _site/docs/content/
+          cp docs/content/http-api.md _site/docs/content/
+          cp docs/content/api-gateway-design.md _site/docs/content/
+          touch _site/.nojekyll
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "_site"
 
       - name: Deploy
         id: deployment

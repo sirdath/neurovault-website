@@ -1,57 +1,67 @@
 # Introduction
 
-NeuroVault is a persistent, local-first memory layer for AI agents. It sits between your markdown notes and any MCP-compatible agent (Claude Code, Claude Desktop, Cursor, Codex) and gives that agent a callable `recall()` + `remember()` surface that survives across sessions — so the things you tell it once don't evaporate when the conversation ends.
+NeuroVault is a local-first memory system for AI agents. Its canonical memories are plain Markdown files on your machine; SQLite, sqlite-vec, BM25, embeddings and the knowledge graph are rebuildable local indexes.
 
-Everything runs on your machine. Your notes are plain `.md` files on disk; the database is a local cache over them. Nothing is sent to a server you don't control.
+There are now two clearly separated products:
+
+- **[NeuroVault Core](https://github.com/sirdath/neurovault-core)** is available now. It is the free, MIT-licensed engine for developers and self-hosters. It includes the local memory service, native MCP server, Claude Code hooks, authenticated HTTP gateway, journaling and consolidation APIs.
+- **NeuroVault Desktop** is the consumer Mac application. It adds the visual Memories, Graph and Review experiences, themes, guided setup, service lifecycle management and official support. It is coming to the Mac App Store and is not currently available for public purchase or download.
+
+Core is not a trial and does not require Desktop.
 
 > [!TIP]
-> In a hurry? The [Quickstart](#quickstart) gets you from download to your first `recall()` in about a minute.
+> Ready to run Core? The [Quickstart](#quickstart) builds it from the public source repository.
 
-## Pick your path
+## Three integration paths
 
-**I just want to use it.** Install the desktop app, point your agent at it, and start dropping in notes. Start with the [Quickstart](#quickstart), then skim [The graph view](#graph-view) to see your knowledge as a living map.
+These paths are related, but they are not the same thing:
 
-**I'm wiring it into an agent / tool.** NeuroVault speaks MCP out of the box and also exposes a plain loopback HTTP API. See the [HTTP API](#http-api) reference for endpoint-by-endpoint shapes, and the [Quickstart](#quickstart) for the MCP connection snippet.
+1. **Automatic context for Claude Code.** Optional local hooks retrieve and inject relevant context before Claude handles a prompt. The model does not have to decide to call a memory tool.
+2. **MCP tools for compatible clients.** Claude Code, Claude Desktop, Cursor, Codex and other MCP clients can explicitly call `recall`, `remember` and the rest of the selected tool tier.
+3. **HTTP for custom software.** Local programs can use the unauthenticated loopback API. Authenticated integrations can use the separate opt-in gateway.
 
-**I want to understand or modify the internals.** Read [Architecture](#architecture) — one pass through storage, ingest, retrieval, the MCP boundary, the UI, and the build pipeline. The [design docs](#api-gateway-design) describe surfaces that are planned or partially built.
+Installing the MCP server alone does not make every MCP client inject context automatically. Automatic injection currently depends on a compatible host hook, such as the Claude Code hook supplied by Core.
 
 ## Core concepts
 
-A few terms show up everywhere in these docs. Worth ten seconds each:
+- **Engram:** one memory backed by Markdown and indexed locally.
+- **Brain:** an isolated vault and database, useful for keeping work, personal and client contexts separate.
+- **Recall:** hybrid retrieval across semantic vectors, BM25 and graph relationships, fused and optionally reranked.
+- **Remember:** the write path that stores Markdown and updates the local indexes.
+- **Experience journal:** append-only events that preserve what happened, when it happened and what evidence later consolidation used.
+- **MCP:** the [Model Context Protocol](https://modelcontextprotocol.io), used by compatible agents to call Core's tools.
 
-- **Engram** — one unit of memory, backed by a single markdown file in your vault and a row in the database. "Note" and "engram" are used interchangeably.
-- **Brain** — an isolated vault + database. Keep separate brains (e.g. *work*, *personal*, *a client project*) and switch the active one; recall never crosses brains unless you ask it to.
-- **Recall** — hybrid retrieval. A query runs through vector search (sqlite-vec over BGE embeddings), keyword search (BM25), and the entity graph, then the results are fused (RRF) and reranked by a cross-encoder. One call, ranked answers.
-- **Remember** — the write path. New content is chunked, embedded, scanned for entities and `[[wikilinks]]`, and indexed — so it's recall-able immediately.
-- **MCP** — the [Model Context Protocol](https://modelcontextprotocol.io). The standard your agent uses to call `recall` / `remember` and the other tools NeuroVault exposes.
+## How Core fits together
 
-## How the pieces fit
+```text
+Claude Code hooks ────────────────┐
+MCP client → stdio MCP bridge ────┼──▶ Core loopback service ──▶ local brains
+local program → HTTP /api/* ──────┘       127.0.0.1:8765          Markdown + SQLite
 
-```
-You ──▶ NeuroVault desktop app (Tauri, ~35 MB resident)
-              │
-              │ - React UI for browsing notes, graph, settings
-              │ - Rust memory layer (sqlite + sqlite-vec + BGE embeddings)
-              │ - axum HTTP server on 127.0.0.1:8765
-              ▼
-        neurovault-server --mcp-only (native Rust, rmcp; stdio JSON-RPC ↔ loopback HTTP; loads no model)
-              │
-              ▼
-        Claude Code / Cursor / Desktop / Codex (any MCP client)
+authenticated integration ───────────▶ optional /v1/* gateway
 ```
 
-Two processes back the agent session: the always-running desktop app, and the per-session `neurovault-server --mcp-only` stdio server the agent spawns. The desktop app owns storage and embeddings. The MCP server is a native Rust stdio shim (built on the official [rmcp](https://modelcontextprotocol.io) SDK) that loads no model and opens no database — it just translates the agent's stdio JSON-RPC into loopback HTTP to the desktop app on `127.0.0.1:8765`. The agent talks to the shim and never sees NeuroVault directly.
+`neurovault-server` owns the local memory engine and loopback service. In `--mcp-only` mode, the same binary runs as a native stdio MCP bridge and can start the headless backend when needed.
 
 ## What's on disk
 
-- `~/.neurovault/brains/<brain_id>/brain.db` — one SQLite file per brain: engrams, chunks, `vec_chunks` (sqlite-vec), entities, links, BM25 indexes.
-- `~/.neurovault/brains/<brain_id>/vault/` — the markdown source of truth. Every engram is also a `.md` file you can read or edit outside the app.
-- `~/.neurovault/brains/<brain_id>/raw/` — the [drop-folder](#drop-folder): raw files you've pasted in (with a `README.md` guide), waiting for the agent to turn them into notes.
-- `~/.neurovault/.fastembed_cache/` — ONNX model cache for the BGE embedder + reranker. Downloaded once on first run. (Override with `FASTEMBED_CACHE_DIR`.)
+By default Core uses `~/.neurovault`:
 
-> [!NOTE]
-> If the app ever breaks, your data is fine — open the vault in any markdown editor. The SQLite database is a rebuildable cache over the `.md` files, not the source of truth.
+```text
+~/.neurovault/
+├── brains.json
+├── brains/<brain-id>/
+│   ├── vault/       # canonical Markdown
+│   ├── brain.db     # rebuildable index
+│   ├── journal/     # append-only experience events
+│   └── audit.jsonl  # local tool audit
+└── .fastembed_cache/
+```
 
-## License + status
+Set `NEUROVAULT_HOME` to use a different root. The embedding and reranker models are downloaded on first semantic use. Core sends no telemetry.
 
-NeuroVault is open source under the [MIT license](https://github.com/sirdath/NeuroVault/blob/main/LICENSE). It's actively developed; `main` is the source of truth. See the [changelog](https://github.com/sirdath/NeuroVault/blob/main/CHANGELOG.md) for what shipped per release.
+## License and status
+
+NeuroVault Core is open source under the [MIT License](https://github.com/sirdath/neurovault-core/blob/main/LICENSE). The NeuroVault name and official visual identity remain trademarks and are not granted by the MIT license.
+
+The old public desktop releases are no longer the supported public distribution channel. Use Core from its public repository today; watch this site for the Mac App Store release of Desktop.

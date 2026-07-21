@@ -1,11 +1,13 @@
 # NeuroVault website
 
-The marketing landing page **and** documentation site for
-[NeuroVault](https://github.com/sirdath/NeuroVault) — a local-first AI
-memory layer. Static, no build step, deployed to GitHub Pages.
+The public landing page and concise documentation site for NeuroVault.
 
-This repo is *just the site*; the app lives in the main
-[NeuroVault](https://github.com/sirdath/NeuroVault) repo.
+The product is intentionally split:
+
+- [NeuroVault Core](https://github.com/sirdath/neurovault-core) is the free, MIT-licensed local memory engine available now.
+- NeuroVault Desktop is the consumer Mac application and is coming to the Mac App Store. It is not currently offered as a public installer.
+
+This repository contains only the static website. There is no application binary or package registry release here.
 
 ## Local preview
 
@@ -15,47 +17,39 @@ python -m http.server 8080
 # docs         → http://localhost:8080/docs/
 ```
 
-(Serve over HTTP, not `file://` — the docs loader `fetch()`es the
-markdown content.)
+Serve over HTTP, not `file://`, because the docs loader fetches Markdown content.
 
-## Structure
+## Public structure
 
-- `index.html` — landing page (hero, features, screenshots, how-it-works, privacy, CTA, footer)
-- `styles.css` — palette, typography, aurora hero, glass cards, reveal animations
-- `script.js` — OS-aware download button, scroll reveal, progress bar
-- `fx/` — the canvas "living brain" hero animation + glow/aurora effects
-- `docs/` — the documentation site
-  - `docs/index.html` + `docs.js` + `docs.css` — the 3-column docs shell (sidebar, content, on-page TOC, Cmd/Ctrl+K search, callouts, prev/next)
-  - `docs/content/*.md` — every docs page as plain markdown
-  - `docs/lib/` — vendored `marked` + `highlight.js` (no CDN at runtime)
-- `assets/` — logo, favicon, screenshots
+- `index.html`: landing page
+- `script.js`: shared theme, reveal and terminal behaviour
+- `styles.css`: shared docs styling
+- `assets/`: public visual assets
+- `fx/nv-brain-points.js`: landing-page mark data
+- `docs/index.html`, `docs/docs.js`, `docs/docs.css`: documentation shell
+- `docs/content/overview.md`: Core/Desktop product boundary
+- `docs/content/quickstart.md`: public Core source build
+- `docs/content/http-api.md`: loopback and authenticated gateway boundary
+- `docs/content/api-gateway-design.md`: concise gateway architecture note
 
-Adding a docs page = one entry in the `PAGES` array in `docs/docs.js`
-plus a `docs/content/<slug>.md` file.
+Prototype and legacy files may remain in the repository for design history, but the Pages workflow deploys an explicit allowlist. They are not part of the public artifact.
 
 ## Deploy
 
-GitHub Actions (`.github/workflows/pages.yml`) deploys the whole repo to
-Pages on every push to `main`. In the repo's **Settings → Pages**, set
-the source to **GitHub Actions**.
+GitHub Actions (`.github/workflows/pages.yml`) builds an allowlisted `_site` directory and deploys that artifact on pushes to `main`.
 
-### Custom domain — `neurovault.dathproject.com`
+In **Settings → Pages**, use **GitHub Actions** as the source.
 
-The `CNAME` file pins the site to **https://neurovault.dathproject.com**.
-To make it resolve, add this DNS record at your `dathproject.com` provider:
+### Custom domain
+
+The `CNAME` file pins the site to `https://neurovault.dathproject.com`. Configure this DNS record at the domain provider:
 
 | Type | Name | Value |
 |---|---|---|
 | `CNAME` | `neurovault` | `sirdath.github.io` |
 
-Then in **Settings → Pages**, set the custom domain to
-`neurovault.dathproject.com` and tick **Enforce HTTPS** once the
-certificate provisions (a few minutes). Until DNS is live, the site is
-also reachable at `https://sirdath.github.io/<repo-name>/`.
+Then enable **Enforce HTTPS** in the repository's Pages settings after the certificate is ready.
 
-## Download link
+## Accuracy rule
 
-The primary CTA points at
-`https://github.com/sirdath/NeuroVault/releases/latest` — GitHub resolves
-that to the newest release, so the button keeps working across versions.
-The OS-aware relabelling logic lives in `script.js`.
+Public install instructions must come from the current [Core README](https://github.com/sirdath/neurovault-core/blob/main/README.md). Do not restore links to the old private Desktop releases, invent npm install commands, or imply that MCP tool access automatically injects context in every client.

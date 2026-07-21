@@ -28,31 +28,10 @@
       ],
     },
     {
-      section: "Using NeuroVault",
-      items: [
-        { slug: "graph-view", title: "The graph view" },
-        { slug: "drop-folder", title: "Drop-folder ingest" },
-        { slug: "diagnostic", title: "Brain diagnostic" },
-      ],
-    },
-    {
-      section: "How it works",
-      items: [
-        { slug: "architecture", title: "Architecture" },
-        { slug: "graph-analytics", title: "Graph analytics" },
-      ],
-    },
-    {
       section: "Reference",
       items: [
         { slug: "http-api", title: "HTTP API" },
-      ],
-    },
-    {
-      section: "Design docs",
-      items: [
-        { slug: "api-gateway-design", title: "API gateway" },
-        { slug: "sync-architecture", title: "Sync architecture" },
+        { slug: "api-gateway-design", title: "API gateway boundary" },
       ],
     },
   ];
@@ -395,21 +374,16 @@
     // Update the "edit on GitHub" footer to point at the right file.
     const editLink = document.getElementById("docs-edit-link");
     if (editLink) {
-      // Some legacy pages have a canonical source under /docs/<FILE>.md in
-      // the repo; everything else is authored directly under
-      // website/docs/content/<slug>.md (what the site serves). Map the
-      // known legacy slugs; default to the website content path so newer
-      // pages link to a file that actually exists.
-      const legacy = {
-        overview: "docs/OVERVIEW.md",
-        architecture: "docs/HOW-NEUROVAULT-WORKS.md",
-        "http-api": "docs/api.md",
-        "graph-analytics": "docs/graph-analytics.md",
-        "api-gateway-design": "docs/api-gateway-design.md",
-        "sync-architecture": "docs/sync-architecture.md",
+      // Public docs link only to the open Core repository. The website is a
+      // concise guide; these are the canonical implementation sources.
+      const canonical = {
+        overview: "README.md",
+        quickstart: "README.md",
+        "http-api": "docs/http-api.md",
+        "api-gateway-design": "src/memory/api_gateway.rs",
       };
-      const repoPath = legacy[slug] || "website/docs/content/" + slug + ".md";
-      editLink.href = "https://github.com/sirdath/NeuroVault/blob/main/" + repoPath;
+      const repoPath = canonical[slug] || "README.md";
+      editLink.href = "https://github.com/sirdath/neurovault-core/blob/main/" + repoPath;
       editLink.textContent = repoPath;
     }
   }
