@@ -7,7 +7,9 @@ From zero to a memory your agent can recall, in about a minute.
 Download the latest installer for your OS from the [releases page](https://github.com/sirdath/NeuroVault/releases/latest) and run it.
 
 > [!NOTE]
-> The installers are unsigned, so Windows SmartScreen / macOS Gatekeeper will warn on first launch. On Windows choose **More info → Run anyway**; on macOS right-click the app → **Open**. This is expected for an open-source app without a paid signing certificate.
+> **macOS** builds are Developer ID signed and notarized by Apple, so they open normally. They require **macOS 14 (Sonoma) or newer on Apple Silicon** — the bundled `sqlite-vec` extension is built for 14+, and on older systems the app launches but cannot open a brain. Intel Macs are not supported.
+>
+> **Windows** installers are not code-signed yet, so SmartScreen will report an unknown publisher. Choose **More info → Run anyway**, or verify the SHA-256 checksum and Sigstore provenance from the release first.
 
 Launch NeuroVault. On first run it downloads the embedding model (~90 MB) into `~/.neurovault/.fastembed_cache/` — that's a one-time step. When the status dot in the bottom bar turns green, the local server is up on `127.0.0.1:8765`.
 
