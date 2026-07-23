@@ -3131,3 +3131,32 @@ body::after {
     scroll-behavior: auto;
   }
 }
+
+/* Refined product wordmark and GitHub actions. */
+.site-header .brand > span:last-child {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.github-icon,
+.button .github-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: currentColor;
+  stroke: none;
+}
+
+.nav-github .github-icon {
+  width: 15px;
+  height: 15px;
+}
