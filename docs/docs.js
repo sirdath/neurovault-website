@@ -374,16 +374,15 @@
     // Update the "edit on GitHub" footer to point at the right file.
     const editLink = document.getElementById("docs-edit-link");
     if (editLink) {
-      // Public docs link only to the open Core repository. The website is a
-      // concise guide; these are the canonical implementation sources.
+      // The main repository is canonical for both desktop and headless use.
       const canonical = {
         overview: "README.md",
-        quickstart: "README.md",
-        "http-api": "docs/http-api.md",
-        "api-gateway-design": "src/memory/api_gateway.rs",
+        quickstart: "dist-npm/README.md",
+        "http-api": "src-tauri/src/memory/http_server.rs",
+        "api-gateway-design": "src-tauri/src/memory/api_gateway.rs",
       };
       const repoPath = canonical[slug] || "README.md";
-      editLink.href = "https://github.com/sirdath/neurovault-core/blob/main/" + repoPath;
+      editLink.href = "https://github.com/sirdath/NeuroVault/blob/main/" + repoPath;
       editLink.textContent = repoPath;
     }
   }

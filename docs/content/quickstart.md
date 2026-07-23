@@ -1,99 +1,126 @@
 # Quickstart
 
-This guide builds the free, MIT-licensed NeuroVault Core from its public source. NeuroVault Desktop is coming to the Mac App Store; there is no current public Desktop installer.
+NeuroVault is one free, open-source product with two install surfaces. Use the
+desktop app for the complete visual experience, or build the same engine
+headless for your own MCP and HTTP setup.
 
-## 1. Build Core
+## Option 1: download the desktop app
 
-Requirements:
+The current supported Mac download requires **Apple Silicon and macOS 14 or
+newer**.
 
-- Rust stable
-- a compatible sqlite-vec loadable extension in `resources/`, or a path supplied through `NEUROVAULT_VEC_EXTENSION`
+1. Open the [latest NeuroVault release](https://github.com/sirdath/NeuroVault/releases/latest).
+2. Download `NeuroVault_*_aarch64.dmg`.
+3. Open the DMG, drag NeuroVault to Applications, then launch it from
+   Applications.
 
-```bash
-git clone https://github.com/sirdath/neurovault-core.git
-cd neurovault-core
-cargo build --release --bin neurovault-server --bin neurovault-api
-```
+Official Mac artifacts are Developer ID signed and notarized. When a release
+includes `SHA256SUMS.txt`, compare the installer against that manifest before
+opening it. Do not bypass a Gatekeeper warning; delete the installer and report
+the release URL instead.
 
-Start the local service:
+The release page can also contain Linux x64 packages and a Windows x64 preview.
+Linux targets glibc 2.35 or newer, with Ubuntu 22.04 as the tested baseline.
+Current Windows installers are not Authenticode-signed and may trigger
+SmartScreen, so they are a preview rather than a fully verified consumer build.
 
-```bash
-./target/release/neurovault-server
-```
+## Option 2: build headless from source
 
-It binds to loopback only by default. In another terminal, check it:
-
-```bash
-curl http://127.0.0.1:8765/api/health
-```
-
-The first semantic recall downloads the on-device embedding and reranker models into `~/.neurovault/.fastembed_cache`. Core has no telemetry.
-
-## 2. Choose how your agent gets memory
-
-### Automatic context in Claude Code
-
-Install Core's local hooks:
+The headless build runs the same local memory engine without the visual app.
+It currently requires Node.js 22 or newer, the stable Rust toolchain and the
+native prerequisites described in the
+[main build guide](https://github.com/sirdath/NeuroVault#quick-start-developers).
 
 ```bash
-./target/release/neurovault-server hook install
-./target/release/neurovault-server hook status
+git clone https://github.com/sirdath/NeuroVault.git
+cd NeuroVault
+node scripts/build-headless.mjs
 ```
 
-The hooks retrieve and inject relevant context before Claude handles a prompt, so this path does not depend on the model deciding to call a memory tool. The installer makes a backup before editing Claude Code settings, and every hook fails open if Core is unavailable.
+The build writes `neurovault-server` (`neurovault-server.exe` on Windows) to
+`src-tauri/target/release/` and stages it with the matching sqlite-vec extension
+under `dist-npm/packages/<platform>/bin/`.
 
-To remove them:
+The repository contains the verified extension for macOS Apple Silicon and
+Windows x64. Linux x64 builders must download and verify the pinned `vec0.so`
+artifact first. Follow the exact checksums and commands in the
+[headless build guide](https://github.com/sirdath/NeuroVault/blob/main/dist-npm/README.md#build-from-source),
+then set `NEUROVAULT_VEC_EXTENSION` to the staged extension's absolute path.
 
-```bash
-./target/release/neurovault-server hook uninstall
-```
+> [!IMPORTANT]
+> `@neurovault/mcp` has not had its first npm publication. An `npx` install will
+> fail today. Use the server bundled with the desktop app or this source build
+> until the package is actually published.
 
-### Callable memory through MCP
+## Connect an MCP client
 
-MCP is the explicit tool path. Build the server as above, then point your client at the absolute binary path.
+Point the client at the absolute path to your built binary.
 
 Claude Code:
 
 ```bash
-claude mcp add --scope user neurovault /absolute/path/to/neurovault-core/target/release/neurovault-server -- --mcp-only
+claude mcp add --scope user neurovault /absolute/path/to/NeuroVault/src-tauri/target/release/neurovault-server -- --mcp-only
 ```
 
-Claude Desktop, Cursor and other JSON-configured MCP clients:
+Claude Desktop, Cursor and other JSON-configured clients:
 
 ```json
 {
   "mcpServers": {
     "neurovault": {
-      "command": "/absolute/path/to/neurovault-core/target/release/neurovault-server",
-      "args": ["--mcp-only"]
+      "command": "/absolute/path/to/NeuroVault/src-tauri/target/release/neurovault-server",
+      "args": ["--mcp-only"],
+      "env": {
+        "NEUROVAULT_VEC_EXTENSION": "/absolute/path/to/staged/vec0.extension"
+      }
     }
   }
 }
 ```
 
-Restart the client after changing its configuration. If `mcpServers` already exists, merge the `neurovault` entry instead of replacing the block.
+Restart the client after changing its configuration. If `mcpServers` already
+exists, merge the `neurovault` entry instead of replacing the block. Set
+`NEUROVAULT_MCP_TIER` to `minimal`, `lite`, `standard` or `full` to control how
+many tools the client receives. `lite` is the default.
 
-Set `NEUROVAULT_MCP_TIER` to `minimal`, `lite`, `standard` or `full` to control how many tools the client receives. `lite` is the default.
+MCP makes memory tools callable. It does **not** automatically inject context
+in every MCP client.
 
-> [!IMPORTANT]
-> MCP access and automatic hook injection solve different problems. MCP lets the agent call memory tools. Claude Code hooks can add relevant context automatically before the prompt is handled. You can enable either or both.
+## Optional: automatic context in Claude Code
 
-## 3. Use HTTP instead
-
-For a local integration, leave `neurovault-server` running and use its loopback `/api/*` routes. For a bearer-authenticated integration, build and configure `neurovault-api` as described in the [HTTP API](#http-api) reference.
-
-## Build confidence
-
-Before relying on a source build, run the same checks used by Core development:
+The supplied Claude Code hooks can retrieve and inject relevant context before
+Claude handles a prompt. This is currently the automatic path; it is distinct
+from ordinary MCP tool access.
 
 ```bash
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+/absolute/path/to/neurovault-server hook install
+/absolute/path/to/neurovault-server hook status
 ```
+
+The installer backs up Claude Code settings, and the hooks fail open if
+NeuroVault is unavailable. Remove them with:
+
+```bash
+/absolute/path/to/neurovault-server hook uninstall
+```
+
+## Use HTTP instead
+
+For a local integration, use the loopback `/api/*` routes. For a
+bearer-authenticated integration, build and configure `neurovault-api` as
+described in the [HTTP API](#http-api) reference.
+
+## Data and provider boundary
+
+Note and engram content is stored as Markdown. SQLite also owns structured state
+such as drafts, core memory, history and proposals. NeuroVault has no telemetry,
+but selected memories returned to a cloud-backed AI client can be sent to that
+client's configured provider under its own privacy terms.
 
 ## What to read next
 
 - **[HTTP API](#http-api):** local and authenticated network boundaries.
-- **[API gateway boundary](#api-gateway-design):** why the loopback API and external gateway remain separate.
-- **[Core repository](https://github.com/sirdath/neurovault-core):** canonical source, security policy and contribution guide.
+- **[API gateway boundary](#api-gateway-design):** why the loopback API and
+  external gateway remain separate.
+- **[NeuroVault repository](https://github.com/sirdath/NeuroVault):** canonical
+  source, install guide, privacy policy and contribution guide.

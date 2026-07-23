@@ -26,14 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify public copy and local assets
+        run: node check-site.mjs
+
       - name: Prepare public site artifact
         run: |
-          mkdir -p _site/assets _site/fx _site/docs/content _site/docs/lib
+          mkdir -p _site/assets _site/docs/content _site/docs/lib
           cp index.html script.js styles.css CNAME _site/
           cp assets/favicon.svg assets/favicon.png _site/assets/
-          cp assets/mark-dark.png assets/wordmark-dark.png _site/assets/
-          cp assets/neural-graph.png assets/ascii-brain-blue.gif _site/assets/
-          cp fx/nv-brain-points.js _site/fx/
+          cp assets/neurovault-mark.png _site/assets/
+          cp assets/product-editor.webp assets/product-graph-3d.webp assets/product-today.webp _site/assets/
           cp docs/index.html docs/docs.js docs/docs.css _site/docs/
           cp -R docs/lib/. _site/docs/lib/
           cp docs/content/overview.md _site/docs/content/

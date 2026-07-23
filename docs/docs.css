@@ -1,8 +1,18 @@
 /* ============================================================
    NeuroVault docs page
-   Reuses tokens from ../styles.css (--bg, --peach, --text, etc.)
-   and only adds layout + prose styles specific to documentation.
+   Extends the landing-page system with denser reading surfaces.
    ============================================================ */
+
+:root {
+  --bg-deep: #050811;
+  --border: var(--line);
+  --border-hot: var(--line-strong);
+  --maxw: 1380px;
+  --peach: var(--blue);
+  --peach-soft: var(--blue-bright);
+  --text-dim: var(--dim);
+  --text-muted: var(--muted);
+}
 
 /* The landing page has aurora blobs and a grain overlay that don't
    suit a long-form reading view. Strip them on the docs body so the
@@ -28,14 +38,14 @@ body.docs-body {
   gap: 48px;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 40px clamp(16px, 3vw, 32px) 80px;
+  padding: 118px clamp(16px, 3vw, 32px) 80px;
   align-items: start;
 }
 
 /* ---- Sidebar (left) ---- */
 .docs-sidebar {
   position: sticky;
-  top: 88px; /* nav height + breathing room */
+  top: 104px; /* fixed glass nav + breathing room */
   max-height: calc(100vh - 110px);
   overflow-y: auto;
   padding-right: 8px;
@@ -155,7 +165,8 @@ body.docs-body {
 }
 .docs-content h2:hover .anchor-link,
 .docs-content h3:hover .anchor-link,
-.docs-content h4:hover .anchor-link { opacity: 1; }
+.docs-content h4:hover .anchor-link,
+.docs-content .anchor-link:focus-visible { opacity: 1; }
 
 /* Paragraphs + lists + links */
 .docs-content p { margin: 0 0 16px; }
@@ -310,7 +321,7 @@ body.docs-body {
 .sidebar-toggle {
   display: none; /* shown on narrow screens via media query */
   position: fixed;
-  top: 70px;
+  top: 92px;
   left: 16px;
   z-index: 40;
   padding: 8px 14px;
@@ -346,11 +357,11 @@ body.docs-body {
   /* Drop the sidebar to off-canvas; show toggle. */
   .docs-layout {
     grid-template-columns: minmax(0, 1fr);
-    padding: 24px 16px 60px;
+    padding: 145px 16px 60px;
   }
   .docs-sidebar {
     position: fixed;
-    top: 60px;
+    top: 80px;
     left: 0;
     bottom: 0;
     width: 280px;
@@ -579,14 +590,3 @@ body.docs-body {
 @media (max-width: 760px) {
   .docs-pager { grid-template-columns: 1fr; }
 }
-
-/* --- v0.2.0 blue rebrand: nav consistency with landing page --- */
-:root{--sans:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
-.nav-logo{justify-self:start;gap:8px}
-.nav-logo-icon{width:50px;height:50px;border-radius:0;box-shadow:none}
-.nav-logo-word{height:15px;width:auto;display:block}
-.nav-links{justify-self:center}
-.nav-cta{justify-self:end;display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:9px 17px;font-weight:600;background:var(--peach)!important;background-image:none!important;color:#fff!important;box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 7px 18px -7px rgba(47,123,246,.65)}
-.nav-cta:hover{transform:translateY(-1px)}
-.nav-cta-ic{width:15px;height:15px}

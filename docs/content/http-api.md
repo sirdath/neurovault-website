@@ -1,13 +1,16 @@
 # HTTP API
 
-NeuroVault Core exposes two different HTTP surfaces. Treat them as separate trust boundaries.
+NeuroVault exposes two different HTTP surfaces. Treat them as separate trust
+boundaries.
 
 ## Local loopback API
 
-`neurovault-server` binds to `127.0.0.1:8765` by default and exposes `/api/*`. This surface has no bearer authentication and is intended only for local processes such as the MCP bridge.
+`neurovault-server` binds to `127.0.0.1:8765` by default and exposes `/api/*`.
+This surface has no bearer authentication and is intended only for local
+processes such as the app and MCP bridge.
 
 ```bash
-cargo run --bin neurovault-server
+./src-tauri/target/release/neurovault-server
 curl http://127.0.0.1:8765/api/health
 curl http://127.0.0.1:8765/api/brains
 ```
@@ -15,7 +18,8 @@ curl http://127.0.0.1:8765/api/brains
 Use `--port <number>` to change the loopback port.
 
 > [!CAUTION]
-> Never proxy or port-forward the unauthenticated loopback API. It is safe only while it remains bound to loopback.
+> Never proxy or port-forward the unauthenticated loopback API. It is safe only
+> while it remains bound to loopback.
 
 ## Authenticated gateway
 
@@ -27,18 +31,23 @@ Use `--port <number>` to change the loopback port.
 - request controls;
 - an append-only local audit log.
 
-Build both binaries:
+Build the headless binaries from the main repository:
 
 ```bash
-git clone https://github.com/sirdath/neurovault-core.git
-cd neurovault-core
-cargo build --release --bin neurovault-server --bin neurovault-api
+git clone https://github.com/sirdath/NeuroVault.git
+cd NeuroVault
+cargo build --manifest-path src-tauri/Cargo.toml --release \
+  --no-default-features --bin neurovault-server --bin neurovault-api
 ```
+
+This direct Cargo command does not stage the sqlite-vec native extension. For a
+complete supported build, follow the platform steps in the
+[headless build guide](https://github.com/sirdath/NeuroVault/blob/main/dist-npm/README.md#build-from-source).
 
 Create an administrator key:
 
 ```bash
-./target/release/neurovault-api --mint-key "local integration"
+./src-tauri/target/release/neurovault-api --mint-key "local integration"
 ```
 
 The plaintext key is displayed once. Save it in your client's secret store.
@@ -46,7 +55,7 @@ The plaintext key is displayed once. Save it in your client's secret store.
 Start the dedicated gateway on loopback:
 
 ```bash
-./target/release/neurovault-api --bind 127.0.0.1 --port 8767
+./src-tauri/target/release/neurovault-api --bind 127.0.0.1 --port 8767
 ```
 
 Then call it with:
@@ -56,7 +65,8 @@ curl -H "Authorization: Bearer nvk_REPLACE_ME" \
   http://127.0.0.1:8767/v1/status
 ```
 
-Run `./target/release/neurovault-api --help` for the current command-line options.
+Run `./src-tauri/target/release/neurovault-api --help` for the current
+command-line options.
 
 ## TLS
 
@@ -71,23 +81,41 @@ Never transmit a bearer key or memory data over an untrusted plaintext network.
 
 ## Endpoint discovery
 
-The MCP registry at [`src/memory/mcp/tools.json`](https://github.com/sirdath/neurovault-core/blob/main/src/memory/mcp/tools.json) is the machine-readable map of supported agent operations to local `/api/*` calls.
+The MCP registry at
+[`src/memory/mcp/tools.json`](https://github.com/sirdath/NeuroVault/blob/main/src-tauri/src/memory/mcp/tools.json)
+is the machine-readable map of supported agent operations to local `/api/*`
+calls.
 
-The authenticated gateway deliberately exposes a narrower `/v1/*` subset according to the scope definitions in [`src/memory/api_gateway.rs`](https://github.com/sirdath/neurovault-core/blob/main/src/memory/api_gateway.rs). Consult the source for the exact routes in the version you deploy rather than assuming every internal route is externally available.
+The authenticated gateway deliberately exposes a narrower `/v1/*` subset
+according to the scope definitions in
+[`src/memory/api_gateway.rs`](https://github.com/sirdath/NeuroVault/blob/main/src-tauri/src/memory/api_gateway.rs).
+Consult the source for the exact routes in the version you deploy rather than
+assuming every internal route is externally available.
 
-## Data and audit files
+## Data, providers and audit files
 
-By default, gateway configuration, hashed keys and audit records live under `~/.neurovault`. Set `NEUROVAULT_HOME` before starting Core to move the whole data root.
+By default, gateway configuration, hashed keys, data and audit records live
+under `~/.neurovault`. Set `NEUROVAULT_HOME` before starting NeuroVault to move
+the whole data root.
 
-Keys are stored hashed. Revocation and usage remain visible in local metadata; plaintext is not recoverable after it is first shown.
+Note and engram content is Markdown. SQLite stores search indexes and structured
+state that is not represented in Markdown, including drafts, core-memory
+blocks, history and proposals. Keys are stored hashed; plaintext is not
+recoverable after it is first shown.
+
+NeuroVault itself does not require a hosted provider for ingest or retrieval.
+It returns selected context to clients you authorize. A connected cloud-backed
+AI client may send that context to its configured provider under that
+provider's privacy terms.
 
 ## Which interface should I use?
 
 | Need | Interface |
 |---|---|
-| MCP client on the same Mac | `neurovault-server --mcp-only` |
+| MCP client on the same machine | `neurovault-server --mcp-only` |
 | Claude Code automatic context | `neurovault-server hook install` |
 | Custom process on the same machine | loopback `/api/*` |
 | Authenticated LAN, VPN or server integration | `/v1/*` gateway behind TLS |
 
-The HTTP API is not required for MCP, and MCP is not what makes Claude Code hook injection automatic.
+The HTTP API is not required for MCP, and MCP is not what makes Claude Code
+hook injection automatic.
