@@ -7,12 +7,17 @@ headless for your own MCP and HTTP setup.
 ## Option 1: download the desktop app
 
 The current supported Mac download requires **Apple Silicon and macOS 14 or
-newer**.
+newer**. **Intel Macs are not a supported target** — the `aarch64` DMG will not
+run on one.
 
 1. Open the [latest NeuroVault release](https://github.com/sirdath/NeuroVault/releases/latest).
-2. Download `NeuroVault_*_aarch64.dmg`.
+2. Download `NeuroVault_*_aarch64.dmg` (28.2 MB in v0.6.1).
 3. Open the DMG, drag NeuroVault to Applications, then launch it from
    Applications.
+
+That is the whole install. The app carries its own MCP server, so you can go
+straight to [Connect an MCP client](#quickstart::connect-an-mcp-client) — no
+clone and no Rust toolchain.
 
 Official Mac artifacts are Developer ID signed and notarized. When a release
 includes `SHA256SUMS.txt`, compare the installer against that manifest before
@@ -54,15 +59,63 @@ then set `NEUROVAULT_VEC_EXTENSION` to the staged extension's absolute path.
 
 ## Connect an MCP client
 
-Point the client at the absolute path to your built binary.
+Pick the section that matches how you installed NeuroVault. If you downloaded
+the DMG, use the first one — you do not need the repository, Rust, or a build.
 
-Claude Code:
+### If you installed the desktop app (most people)
+
+The app ships the MCP server inside its own bundle, so there is nothing to
+build and no path to hunt down.
+
+**Claude Code — one click.** Open NeuroVault and go to **Settings →
+Connections**, expand **Claude Code**, and press **Configure automatically**.
+NeuroVault merges only its own entry into `~/.claude.json`; your existing
+login, settings and any other MCP servers are preserved. Restart your Claude
+Code session afterwards.
+
+The same panel shows the equivalent terminal command if you would rather run it
+yourself:
+
+```bash
+claude mcp add --scope user neurovault \
+  /Applications/NeuroVault.app/Contents/MacOS/neurovault-server -- --mcp-only
+```
+
+**Claude Desktop.** Edit
+`~/Library/Application Support/Claude/claude_desktop_config.json` and merge in
+the `neurovault` entry below, then quit and reopen Claude Desktop.
+
+**Cursor.** Use `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json`
+inside a single project, with the same entry.
+
+```json
+{
+  "mcpServers": {
+    "neurovault": {
+      "command": "/Applications/NeuroVault.app/Contents/MacOS/neurovault-server",
+      "args": ["--mcp-only"]
+    }
+  }
+}
+```
+
+That path assumes you dragged NeuroVault into `/Applications`. If it lives
+somewhere else, **Settings → Connections** displays the resolved path for your
+install and copies the correct config for Claude Code, Claude Desktop, Cursor,
+VS Code, Continue, and generic stdio clients.
+
+The bundled server does not need the app window to be open: in `--mcp-only`
+mode it starts the local backend itself when a client connects. Set
+`NEUROVAULT_AUTOSTART=0` to disable that.
+
+### If you built headless from source (contributors)
+
+Point the client at the binary produced by the build above, and set
+`NEUROVAULT_VEC_EXTENSION` to the staged sqlite-vec extension.
 
 ```bash
 claude mcp add --scope user neurovault /absolute/path/to/NeuroVault/src-tauri/target/release/neurovault-server -- --mcp-only
 ```
-
-Claude Desktop, Cursor and other JSON-configured clients:
 
 ```json
 {
@@ -78,10 +131,14 @@ Claude Desktop, Cursor and other JSON-configured clients:
 }
 ```
 
+### Either way
+
 Restart the client after changing its configuration. If `mcpServers` already
 exists, merge the `neurovault` entry instead of replacing the block. Set
-`NEUROVAULT_MCP_TIER` to `minimal`, `lite`, `standard` or `full` to control how
-many tools the client receives. `lite` is the default.
+`NEUROVAULT_MCP_TIER` to `minimal` (3 tools), `lite` (9), `standard` (21) or
+`full` (55) to control how many tools the client receives. `lite` is the
+default, and fewer tools means less tool-definition context the agent pays for
+up front.
 
 MCP makes memory tools callable. It does **not** automatically inject context
 in every MCP client.
@@ -92,16 +149,23 @@ The supplied Claude Code hooks can retrieve and inject relevant context before
 Claude handles a prompt. This is currently the automatic path; it is distinct
 from ordinary MCP tool access.
 
+In the desktop app, open **Privacy & Trust** and use **Turn on automatic
+context**. The same switch pauses it again later, and every automatic decision
+leaves a local receipt you can read on that screen.
+
+From a terminal, use the server binary directly — the bundled one if you
+installed the app, or your own build:
+
 ```bash
-/absolute/path/to/neurovault-server hook install
-/absolute/path/to/neurovault-server hook status
+/Applications/NeuroVault.app/Contents/MacOS/neurovault-server hook install
+/Applications/NeuroVault.app/Contents/MacOS/neurovault-server hook status
 ```
 
 The installer backs up Claude Code settings, and the hooks fail open if
 NeuroVault is unavailable. Remove them with:
 
 ```bash
-/absolute/path/to/neurovault-server hook uninstall
+/Applications/NeuroVault.app/Contents/MacOS/neurovault-server hook uninstall
 ```
 
 ## Use HTTP instead

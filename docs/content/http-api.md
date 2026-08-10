@@ -9,8 +9,11 @@ boundaries.
 This surface has no bearer authentication and is intended only for local
 processes such as the app and MCP bridge.
 
+If you installed the desktop app, it already serves this API while it is
+running — you only need to start a server yourself for a headless setup:
+
 ```bash
-./src-tauri/target/release/neurovault-server
+./src-tauri/target/release/neurovault-server   # headless build
 curl http://127.0.0.1:8765/api/health
 curl http://127.0.0.1:8765/api/brains
 ```

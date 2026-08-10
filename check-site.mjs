@@ -38,7 +38,7 @@ for (const path of publicFiles) {
 }
 
 const homepage = await read("index.html");
-const macDmgUrl = "https://github.com/sirdath/NeuroVault/releases/download/v0.6.0/NeuroVault_0.6.0_aarch64.dmg";
+const macDmgUrl = "https://github.com/sirdath/NeuroVault/releases/download/v0.6.1/NeuroVault_0.6.1_aarch64.dmg";
 if ((homepage.match(/<h1\b/gi) ?? []).length !== 1) {
   throw new Error("index.html must contain exactly one h1");
 }

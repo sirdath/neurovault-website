@@ -214,7 +214,12 @@ body.docs-body {
 .docs-content pre code.hljs {
   background: transparent;
   border: none;
-  color: var(--text);
+  /* Pinned to the vendored atom-dark foreground, NOT var(--text): the archive
+     palette redefines --text to near-black ink for the light page, which
+     rendered every code block black-on-black (~1.05:1 contrast). The <pre>
+     keeps its dark --bg-deep ground, so the highlight theme's own palette is
+     the one that has to win here. */
+  color: #abb2bf;
   padding: 0;
   font-size: inherit;
 }
